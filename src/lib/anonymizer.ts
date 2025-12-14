@@ -75,6 +75,7 @@ export interface AnonymizerOptions {
 
 export type OutputFormat = 'json' | 'markdown' | 'csv' | 'text' | 'storyline';
 export type DetailLevel = 'minimal' | 'standard' | 'detailed' | 'debug';
+export type ExportProfile = 'ai_safe' | 'audit' | 'debug';
 
 /**
  * ------------------------------------------------------------------
@@ -484,11 +485,16 @@ export class FinancialAnonymizer {
     };
   }
 
-  public formatData(data: SanitizedData, format: OutputFormat, opts?: { maxRows?: number; highlightTerm?: string; detailLevel?: DetailLevel }): string {
+  public formatData(
+    data: SanitizedData,
+    format: OutputFormat,
+    opts?: { maxRows?: number; highlightTerm?: string; detailLevel?: DetailLevel; profile?: ExportProfile }
+  ): string {
     if (!data || !data.transactions.length) return '';
     const maxRows = opts?.maxRows;
     const highlightTerm = opts?.highlightTerm;
-    const detailLevel = opts?.detailLevel ?? 'minimal';
+    const profile: ExportProfile = opts?.profile ?? 'ai_safe';
+    const detailLevel = opts?.detailLevel ?? (profile === 'audit' ? 'standard' : profile === 'debug' ? 'debug' : 'minimal');
     const rows = typeof maxRows === 'number' ? data.transactions.slice(0, Math.max(0, maxRows)) : data.transactions;
     const truncated = typeof maxRows === 'number' && data.transactions.length > maxRows;
 
@@ -603,7 +609,8 @@ export class FinancialAnonymizer {
             );
             break;
         }
-        return (truncated ? `# PREVIEW: first ${maxRows} rows\n` : '') + csvHeader + csvRows.join('\n');
+        // AI Safe profile removes preview comments (cleaner CSV for models)
+        return ((profile === 'ai_safe' || !truncated) ? '' : `# PREVIEW: first ${maxRows} rows\n`) + csvHeader + csvRows.join('\n');
 
       case 'markdown':
         let mdHeader = '';
@@ -635,6 +642,10 @@ export class FinancialAnonymizer {
               `| ${fmtVal(t.date)} | ${fmtVal(t.merchant, true)} | ${fmtVal(t.category, true)} | ${fmtVal(t.description, true)} | ${t.amount.toFixed(2)} | **${t.type.toUpperCase()}** | ${t.inferenceSource} | ${(t.categoryConfidence ?? 0).toFixed(2)} |`
             );
             break;
+        }
+        // AI Safe profile: omit headers/preview notes for a cleaner AI-ready paste
+        if (profile === 'ai_safe') {
+          return `${mdHeader}${mdRows.join('\n')}`;
         }
         return `### Sanitized Financial Data\n${truncated ? `\n> PREVIEW: showing first ${maxRows} rows of ${data.transactions.length}\n` : '\n'}\n${mdHeader}${mdRows.join('\n')}`;
 
@@ -804,7 +815,8 @@ export class FinancialAnonymizer {
             break;
         }
         
-        return (truncated ? `PREVIEW: first ${maxRows} rows\n\n` : '') + textLines.join('\n');
+        // AI Safe profile removes preview headers (cleaner for prompts)
+        return ((profile === 'ai_safe' || !truncated) ? '' : `PREVIEW: first ${maxRows} rows\n\n`) + textLines.join('\n');
         
       default:
         return '';

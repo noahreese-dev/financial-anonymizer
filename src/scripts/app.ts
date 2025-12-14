@@ -1,4 +1,4 @@
-import { FinancialAnonymizer, type OutputFormat, type DetailLevel, type PreflightReport, type SanitizedData } from '../lib/anonymizer';
+import { FinancialAnonymizer, type OutputFormat, type DetailLevel, type ExportProfile, type PreflightReport, type SanitizedData } from '../lib/anonymizer';
 import { signatureFromHeaders } from '../lib/dialect';
 import { detectFileKind, readFileArrayBuffer, readFileText, rowsFromCsvText, rowsFromXlsx, rowsFromPdfText, type PdfExtractMeta } from '../lib/ingest';
 
@@ -41,6 +41,7 @@ function toggleTheme() {
 
 let activeFormat: OutputFormat = 'markdown';
 let activeDetailLevel: DetailLevel = 'minimal';
+let activeProfile: ExportProfile = 'ai_safe';
 let outputJSON: SanitizedData | null = null;
 let isProcessing = false;
 let stagedRows: string[][] | null = null;
@@ -179,25 +180,27 @@ function renderOutput(highlightTerm?: string) {
   const anonymizer = new FinancialAnonymizer(); // defaults match base behavior
   // Large CSV safety: render a preview only
   const previewRows = activeFormat === 'json' ? 300 : activeFormat === 'storyline' ? 2000 : 500;
-  
-  // Pass highlightTerm and detailLevel to formatData
-  const formatted = anonymizer.formatData(outputJSON, activeFormat, { maxRows: previewRows, highlightTerm, detailLevel: activeDetailLevel });
+
+  // Profile shapes headers/preview notes (AI Safe is cleaner for prompts).
+  const out = anonymizer.formatData(outputJSON, activeFormat, {
+    maxRows: previewRows,
+    highlightTerm,
+    detailLevel: activeDetailLevel,
+    profile: activeProfile
+  });
 
   emptyEl.classList.add('hidden');
   outputContainer.classList.remove('hidden');
   
   // If highlighted, use innerHTML. If not, textContent is safer (but formatData is safe now).
   // formatData escapes HTML entities if highlightTerm is present.
-  if (highlightTerm) {
-    outputEl.innerHTML = formatted;
-  } else {
-    outputEl.textContent = formatted;
-  }
+  if (highlightTerm) outputEl.innerHTML = out;
+  else outputEl.textContent = out;
   
-  copyBtn && (copyBtn.disabled = !formatted);
-  downloadBtn && (downloadBtn.disabled = !formatted);
-  aiBtn && (aiBtn.disabled = !formatted);
-  btnSearchOpen && (btnSearchOpen.disabled = !formatted);
+  copyBtn && (copyBtn.disabled = !out);
+  downloadBtn && (downloadBtn.disabled = !out);
+  aiBtn && (aiBtn.disabled = !out);
+  btnSearchOpen && (btnSearchOpen.disabled = !out);
 
   const ext =
     activeFormat === 'markdown' || activeFormat === 'storyline'
@@ -1162,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnCopy?.addEventListener('click', async () => {
     if (!outputJSON) return;
     const previewRows = activeFormat === 'json' ? 300 : activeFormat === 'storyline' ? 2000 : 500;
-    const formatted = new FinancialAnonymizer().formatData(outputJSON, activeFormat, { maxRows: previewRows, detailLevel: activeDetailLevel });
+    const formatted = new FinancialAnonymizer().formatData(outputJSON, activeFormat, { maxRows: previewRows, detailLevel: activeDetailLevel, profile: activeProfile });
     try {
       await navigator.clipboard.writeText(formatted);
       
@@ -1204,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
           : 'text/plain';
 
     // Full export (no limit)
-    const formatted = new FinancialAnonymizer().formatData(outputJSON, activeFormat, { detailLevel: activeDetailLevel });
+    const formatted = new FinancialAnonymizer().formatData(outputJSON, activeFormat, { detailLevel: activeDetailLevel, profile: activeProfile });
     const blob = new Blob([formatted], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1214,6 +1217,34 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  });
+
+  // Profile Selector (AI Safe / Audit / Debug)
+  const profileBtn = $('profile-btn');
+  const profileMenu = $('profile-menu');
+  const profileLabel = $('profile-label');
+  const profileOptions = document.querySelectorAll('.profile-option');
+
+  // Restore saved profile preference (best-effort)
+  try {
+    const saved = localStorage.getItem('fa:profile');
+    if (saved === 'ai_safe' || saved === 'audit' || saved === 'debug') {
+      activeProfile = saved;
+    }
+  } catch {
+    // ignore
+  }
+
+  const setProfileLabel = () => {
+    if (!profileLabel) return;
+    profileLabel.textContent =
+      activeProfile === 'audit' ? 'Audit' : activeProfile === 'debug' ? 'Debug' : 'AI Safe';
+  };
+  setProfileLabel();
+
+  profileBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    profileMenu?.classList.toggle('hidden');
   });
 
   // Detail Level Selector
@@ -1227,11 +1258,42 @@ document.addEventListener('DOMContentLoaded', () => {
     detailLevelMenu?.classList.toggle('hidden');
   });
 
-  // Close menu when clicking outside
+  // Close menus when clicking outside
   document.addEventListener('click', (e) => {
+    if (!profileBtn?.contains(e.target as Node) && !profileMenu?.contains(e.target as Node)) {
+      profileMenu?.classList.add('hidden');
+    }
     if (!detailLevelBtn?.contains(e.target as Node) && !detailLevelMenu?.contains(e.target as Node)) {
       detailLevelMenu?.classList.add('hidden');
     }
+  });
+
+  profileOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const next = opt.getAttribute('data-profile') as ExportProfile | null;
+      if (!next) return;
+
+      activeProfile = next;
+      try { localStorage.setItem('fa:profile', activeProfile); } catch { /* ignore */ }
+
+      // Set a sensible default detail level for the chosen profile (user can still override)
+      if (activeProfile === 'ai_safe') activeDetailLevel = 'minimal';
+      if (activeProfile === 'audit') activeDetailLevel = 'standard';
+      if (activeProfile === 'debug') activeDetailLevel = 'debug';
+
+      // Update labels
+      setProfileLabel();
+      if (detailLevelLabel) detailLevelLabel.textContent = activeDetailLevel.charAt(0).toUpperCase() + activeDetailLevel.slice(1);
+
+      // Active state styling
+      profileOptions.forEach(o => o.classList.remove('bg-navy-800/30'));
+      opt.classList.add('bg-navy-800/30');
+
+      // Close menu
+      profileMenu?.classList.add('hidden');
+
+      renderOutput();
+    });
   });
 
   detailOptions.forEach(opt => {
