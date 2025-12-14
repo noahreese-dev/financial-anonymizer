@@ -454,9 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const dropzone = $('dropzone');
   const dropOverlay = $('drop-overlay');
   const textarea = $('input-csv') as HTMLTextAreaElement | null;
-  const optUltraClean = $('opt-ultra-clean') as HTMLInputElement | null;
-  const customTermsWrap = $('custom-terms');
+  const optUltraClean = $('ultra-clean-toggle') as HTMLInputElement | null;
+  const customTermsWrap = $('custom-terms-chips');
   const customTermInput = $('custom-term-input') as HTMLInputElement | null;
+  const btnAddTerm = $('btn-add-term') as HTMLButtonElement | null;
 
   const pdfControls = $('pdf-controls');
   const pdfPageStart = $('pdf-page-start') as HTMLInputElement | null;
@@ -529,18 +530,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!customTermsWrap) return;
     customTermsWrap.innerHTML = '';
     for (const term of customRemoveTerms) {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className =
-        'inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-navy-800 bg-navy-950/40 text-slate-200 text-[11px] font-mono hover:bg-navy-950/70 transition-colors';
-      chip.innerHTML = `<span>${term.replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</span><span class="text-slate-500 hover:text-red-300" aria-label="remove">×</span>`;
-      chip.addEventListener('click', () => {
+      const wrap = document.createElement('div');
+      wrap.className =
+        'inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-navy-800 bg-navy-950/40 text-slate-200 text-[11px] font-mono';
+
+      const label = document.createElement('span');
+      label.textContent = term;
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'text-slate-500 hover:text-red-300 transition-colors';
+      remove.setAttribute('aria-label', `Remove "${term}"`);
+      remove.textContent = '×';
+      remove.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         customRemoveTerms = customRemoveTerms.filter((t) => t !== term);
         saveCustomTerms();
         renderCustomTerms();
         rerunPreflightFromStaged();
       });
-      customTermsWrap.appendChild(chip);
+
+      wrap.appendChild(label);
+      wrap.appendChild(remove);
+      customTermsWrap.appendChild(wrap);
     }
     if (customRemoveTerms.length === 0) {
       const hint = document.createElement('div');
@@ -552,8 +565,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderCustomTerms();
 
-  // Collapsible Fine-tune section with localStorage persistence
-  const fineTuneSection = $('fine-tune-section') as HTMLDetailsElement | null;
+  // Collapsible fine-tune section with localStorage persistence
+  const fineTuneSection = $('configuration-section') as HTMLDetailsElement | null;
   if (fineTuneSection) {
     // Restore saved state
     try {
@@ -593,22 +606,36 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const val = (customTermInput.value ?? '').trim();
       if (!val) return;
-      // Case-insensitive de-dupe (capitals don't matter)
-      const lower = val.toLowerCase();
-      const existingLower = new Set(customRemoveTerms.map((t) => (t ?? '').toLowerCase()));
-      if (!existingLower.has(lower)) customRemoveTerms.unshift(val);
-      if (customRemoveTerms.length > 50) customRemoveTerms = customRemoveTerms.slice(0, 50);
-      customTermInput.value = '';
-      saveCustomTerms();
-      renderCustomTerms();
-      // Update preflight counts if we already have staged rows
-      rerunPreflightFromStaged();
+      addCustomTerm(val);
     } else if (e.key === 'Backspace' && (customTermInput.value ?? '') === '' && customRemoveTerms.length) {
       customRemoveTerms.shift();
       saveCustomTerms();
       renderCustomTerms();
       rerunPreflightFromStaged();
     }
+  });
+
+  function addCustomTerm(val: string) {
+    const term = (val ?? '').trim();
+    if (!term) return;
+
+    // Case-insensitive de-dupe (capitals don't matter)
+    const lower = term.toLowerCase();
+    const existingLower = new Set(customRemoveTerms.map((t) => (t ?? '').toLowerCase()));
+    if (!existingLower.has(lower)) customRemoveTerms.unshift(term);
+    if (customRemoveTerms.length > 50) customRemoveTerms = customRemoveTerms.slice(0, 50);
+
+    if (customTermInput) customTermInput.value = '';
+    saveCustomTerms();
+    renderCustomTerms();
+    rerunPreflightFromStaged();
+  }
+
+  btnAddTerm?.addEventListener('click', () => {
+    const val = (customTermInput?.value ?? '').trim();
+    if (!val) return;
+    addCustomTerm(val);
+    customTermInput?.focus();
   });
 
   function renderPlannedRemovals(rep: PreflightReport | null) {
@@ -1372,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   });
 
-  // Profile Selector (AI Safe / Audit / Debug)
+  // Detail style selector (Minimal / Standard / Debug) — stored internally as ExportProfile
   const profileBtn = $('profile-btn');
   const profileMenu = $('profile-menu');
   const profileLabel = $('profile-label');
@@ -1393,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const setProfileLabel = () => {
     if (!profileLabel) return;
     profileLabel.textContent =
-      activeProfile === 'audit' ? 'Audit' : activeProfile === 'debug' ? 'Debug' : 'AI Safe';
+      activeProfile === 'audit' ? 'Standard' : activeProfile === 'debug' ? 'Debug' : 'Minimal';
   };
   setProfileLabel();
 
