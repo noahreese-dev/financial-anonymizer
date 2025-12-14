@@ -119,6 +119,59 @@ function renderFindingsBar() {
   bar.classList.remove('hidden');
 }
 
+function renderShareSafety() {
+  const badge = $('share-safety-badge');
+  const itemsEl = $('share-safety-items');
+  if (!badge || !itemsEl) return;
+
+  if (!outputJSON) {
+    badge.textContent = 'Safety: —';
+    badge.className = 'px-2.5 py-1 rounded-full border border-navy-800/60 bg-navy-950/30 text-[11px] font-mono text-slate-400';
+    itemsEl.innerHTML = '';
+    return;
+  }
+
+  const text = outputJSON.transactions.map(t => `${t.merchant}\n${t.description}`).join('\n');
+  const counts = {
+    email: (text.match(/[\w\.-]+@[\w\.-]+\.\w+/g) || []).length,
+    phone: (text.match(/\b(?:\+?\d{1,2}[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b/g) || []).length,
+    url: (text.match(/\bhttps?:\/\/\S+|\bwww\.\S+/gi) || []).length,
+    ssn: (text.match(/\b\d{3}-\d{2}-\d{4}\b/g) || []).length,
+    card: (text.match(/\b(?:\d[ -]*?){13,16}\b/g) || []).length
+  };
+
+  const total = counts.email + counts.phone + counts.url + counts.ssn + counts.card;
+  const risk = (counts.ssn > 0 || counts.card > 0) ? 'High' : total > 0 ? 'Medium' : 'Low';
+
+  const badgeBase = 'px-2.5 py-1 rounded-full border text-[11px] font-mono';
+  const badgeTone =
+    risk === 'Low'
+      ? 'border-green-500/25 bg-green-500/10 text-green-300'
+      : risk === 'Medium'
+        ? 'border-yellow-500/25 bg-yellow-500/10 text-yellow-300'
+        : 'border-red-500/25 bg-red-500/10 text-red-300';
+
+  badge.className = `${badgeBase} ${badgeTone}`;
+  badge.textContent = `Safety: ${risk}`;
+
+  const mk = (label: string, ok: boolean, find?: string) => {
+    const base = 'px-2.5 py-1 rounded-full border text-[11px] font-mono transition-colors whitespace-nowrap';
+    const tone = ok
+      ? 'border-green-500/20 bg-green-500/10 text-green-300'
+      : 'border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/15';
+    const tag = (!ok && find) ? 'button' : 'span';
+    const attrs = (!ok && find) ? `data-find="${escapeHtml(find)}" title="Find remaining: ${escapeHtml(label)}"` : '';
+    return `<${tag} ${attrs} class="${base} ${tone}">${ok ? '✓' : '!' } ${escapeHtml(label)}</${tag}>`;
+  };
+
+  itemsEl.innerHTML =
+    mk('Email', counts.email === 0, '@') +
+    mk('Phone', counts.phone === 0, '(') +
+    mk('URL', counts.url === 0, 'http') +
+    mk('SSN', counts.ssn === 0, '-') +
+    mk('Card', counts.card === 0, '****');
+}
+
 function formatCurrency(val: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 }
@@ -181,6 +234,7 @@ function renderOutput(highlightTerm?: string) {
     if (statNet) statNet.textContent = '$0.00';
     if (topList) topList.innerHTML = '<li class="text-xs text-slate-600">Analysis will appear here</li>';
     renderFindingsBar();
+    renderShareSafety();
     return;
   }
 
@@ -230,6 +284,7 @@ function renderOutput(highlightTerm?: string) {
   }
 
   renderFindingsBar();
+  renderShareSafety();
 }
 
 function renderAnalysis() {
@@ -958,6 +1013,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Findings chips → jump to matches using existing search tooling
   findingsChips?.addEventListener('click', (e) => {
+    const target = (e.target as HTMLElement | null)?.closest?.('button[data-find]') as HTMLButtonElement | null;
+    const term = target?.dataset?.find;
+    if (!term) return;
+    openSearch();
+    if (searchInput) {
+      searchInput.value = term;
+      searchInput.dispatchEvent(new Event('input'));
+    }
+  });
+
+  // Share-safety items (failed checks) → open search with a helpful seed term
+  const shareSafetyItems = $('share-safety-items');
+  shareSafetyItems?.addEventListener('click', (e) => {
     const target = (e.target as HTMLElement | null)?.closest?.('button[data-find]') as HTMLButtonElement | null;
     const term = target?.dataset?.find;
     if (!term) return;
