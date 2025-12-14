@@ -40,7 +40,7 @@ function toggleTheme() {
 }
 
 let activeFormat: OutputFormat = 'markdown';
-let activeDetailLevel: DetailLevel = 'minimal';
+let activeDetailLevel: DetailLevel = 'minimal'; // driven by Profile now (no separate UI)
 let activeProfile: ExportProfile = 'ai_safe';
 let outputJSON: SanitizedData | null = null;
 let isProcessing = false;
@@ -243,7 +243,7 @@ function renderOutput(highlightTerm?: string) {
   const previewRows = activeFormat === 'json' ? 300 : activeFormat === 'storyline' ? 2000 : 500;
 
   // Profile shapes headers/preview notes (AI Safe is cleaner for prompts).
-  const out = anonymizer.formatData(outputJSON, activeFormat, {
+    const out = anonymizer.formatData(outputJSON, activeFormat, {
     maxRows: previewRows,
     highlightTerm,
     detailLevel: activeDetailLevel,
@@ -1387,6 +1387,8 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch {
     // ignore
   }
+  // Ensure detail level tracks the selected profile
+  activeDetailLevel = activeProfile === 'audit' ? 'standard' : activeProfile === 'debug' ? 'debug' : 'minimal';
 
   const setProfileLabel = () => {
     if (!profileLabel) return;
@@ -1400,24 +1402,10 @@ document.addEventListener('DOMContentLoaded', () => {
     profileMenu?.classList.toggle('hidden');
   });
 
-  // Detail Level Selector
-  const detailLevelBtn = $('detail-level-btn');
-  const detailLevelMenu = $('detail-level-menu');
-  const detailLevelLabel = $('detail-level-label');
-  const detailOptions = document.querySelectorAll('.detail-option');
-
-  detailLevelBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    detailLevelMenu?.classList.toggle('hidden');
-  });
-
   // Close menus when clicking outside
   document.addEventListener('click', (e) => {
     if (!profileBtn?.contains(e.target as Node) && !profileMenu?.contains(e.target as Node)) {
       profileMenu?.classList.add('hidden');
-    }
-    if (!detailLevelBtn?.contains(e.target as Node) && !detailLevelMenu?.contains(e.target as Node)) {
-      detailLevelMenu?.classList.add('hidden');
     }
   });
 
@@ -1436,7 +1424,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update labels
       setProfileLabel();
-      if (detailLevelLabel) detailLevelLabel.textContent = activeDetailLevel.charAt(0).toUpperCase() + activeDetailLevel.slice(1);
 
       // Active state styling
       profileOptions.forEach(o => o.classList.remove('bg-navy-800/30'));
@@ -1445,32 +1432,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Close menu
       profileMenu?.classList.add('hidden');
 
-      renderOutput();
-    });
-  });
-
-  detailOptions.forEach(opt => {
-    opt.addEventListener('click', () => {
-      const level = opt.getAttribute('data-detail') as DetailLevel;
-      if (!level) return;
-      
-      activeDetailLevel = level;
-      
-      // Update label
-      if (detailLevelLabel) {
-        detailLevelLabel.textContent = level.charAt(0).toUpperCase() + level.slice(1);
-      }
-      
-      // Update active state
-      detailOptions.forEach(o => {
-        o.classList.remove('bg-navy-800/30');
-      });
-      opt.classList.add('bg-navy-800/30');
-      
-      // Close menu
-      detailLevelMenu?.classList.add('hidden');
-      
-      // Re-render output
       renderOutput();
     });
   });
