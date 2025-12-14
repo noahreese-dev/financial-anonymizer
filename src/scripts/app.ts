@@ -454,7 +454,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const dropzone = $('dropzone');
   const dropOverlay = $('drop-overlay');
   const textarea = $('input-csv') as HTMLTextAreaElement | null;
-  const optUltraClean = $('ultra-clean-toggle') as HTMLInputElement | null;
   const customTermsWrap = $('custom-terms-chips');
   const customTermInput = $('custom-term-input') as HTMLInputElement | null;
   const btnAddTerm = $('btn-add-term') as HTMLButtonElement | null;
@@ -688,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function rerunPreflightFromStaged() {
     if (!stagedRows) return;
     try {
-      const a = new FinancialAnonymizer({ ultraClean: !!optUltraClean?.checked, customRemoveTerms });
+      const a = new FinancialAnonymizer({ customRemoveTerms });
       preflight = a.preflightRows(stagedRows);
       renderPlannedRemovals(preflight);
     } catch {
@@ -717,7 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pdfControls?.classList.add('hidden');
 
     try {
-      const anonymizer = new FinancialAnonymizer({ ultraClean: !!optUltraClean?.checked, customRemoveTerms });
+      const anonymizer = new FinancialAnonymizer({ customRemoveTerms });
 
       if (stagedKind === 'csv') {
         const text = await readFileText(file);
@@ -878,7 +877,6 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         // Defaults replicate the original React logic (mask PII, remove IDs/prefixes, title-case)
         const anonymizer = new FinancialAnonymizer({
-          ultraClean: !!optUltraClean?.checked,
           customRemoveTerms
         });
         outputJSON = stagedRows ? anonymizer.processRows(stagedRows) : anonymizer.process(textarea.value);
@@ -1259,19 +1257,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Delete All clicked for term:', term);
     if (!term) {
       console.log('No term to delete');
-      return;
-    }
-
-    // Known PII placeholders - already handled by anonymizer, no need to add to custom terms
-    const piiPlaceholders = ['PHONE', 'EMAIL', 'SSN', 'URL', 'ADDRESS', 'ZIP', 'LOC', 'CARD', '****'];
-    const isPiiPlaceholder = piiPlaceholders.some(p =>
-      term.toUpperCase() === p || term === `[${p}]`
-    );
-
-    if (isPiiPlaceholder) {
-      // Just close search - PII is already being masked by the anonymizer
-      console.log('PII placeholder detected, skipping reprocess (already masked)');
-      closeSearch();
       return;
     }
 
