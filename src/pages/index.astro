@@ -203,6 +203,14 @@ import Layout from '../layouts/Layout.astro';
             </div>
           </div>
         </div>
+
+        <!-- Findings (appears after processing) -->
+        <div id="findings-bar" class="hidden flex-shrink-0 px-5 py-3 border-b border-navy-800/50">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-xs font-bold text-slate-200 uppercase tracking-wider">Findings</div>
+            <div id="findings-chips" class="flex flex-wrap items-center justify-end gap-2"></div>
+          </div>
+        </div>
         
         <!-- Top Bar: Format Tabs + Review Mode + Detail Level -->
         <div class="flex-shrink-0 px-5 py-4 border-b border-navy-800/50 flex items-center justify-between gap-4">

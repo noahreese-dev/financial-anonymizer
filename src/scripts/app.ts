@@ -51,6 +51,70 @@ let customRemoveTerms: string[] = [];
 
 const $ = (id: string) => document.getElementById(id);
 
+function escapeHtml(s: string): string {
+  return String(s)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderFindingsBar() {
+  const bar = $('findings-bar');
+  const chips = $('findings-chips');
+  if (!bar || !chips) return;
+
+  const rep = outputJSON?.metadata?.removalReport;
+  if (!outputJSON || !rep) {
+    bar.classList.add('hidden');
+    chips.innerHTML = '';
+    return;
+  }
+
+  const red = rep.redactions ?? {};
+  const items: Array<{ label: string; count: number; term?: string; tone?: 'neutral' | 'good' | 'warn' }> = [];
+
+  const addPII = (label: string, key: keyof typeof red, term: string) => {
+    const count = Number((red as any)?.[key] ?? 0);
+    if (count > 0) items.push({ label, count, term, tone: 'warn' });
+  };
+
+  addPII('Email', 'email' as any, '[EMAIL]');
+  addPII('Phone', 'phone' as any, '[PHONE]');
+  addPII('SSN', 'ssn' as any, '[SSN]');
+  addPII('URL', 'url' as any, '[URL]');
+  addPII('Address', 'address' as any, '[ADDRESS]');
+  addPII('ZIP', 'zip' as any, '[ZIP]');
+  // Cards are replaced with ****
+  addPII('Card', 'card' as any, '****');
+  // Locations are replaced with [LOC] when enabled
+  addPII('Loc', 'location' as any, '[LOC]');
+
+  if ((rep.idTokensRemoved ?? 0) > 0) items.push({ label: 'IDs', count: rep.idTokensRemoved, tone: 'neutral' });
+  if ((rep.merchantNormalized ?? 0) > 0) items.push({ label: 'Normalized', count: rep.merchantNormalized, tone: 'good' });
+  if ((rep.customRemoved ?? 0) > 0) items.push({ label: 'Custom', count: rep.customRemoved, tone: 'good' });
+
+  // Render as compact chips. PII chips are clickable (data-find) to jump via search.
+  const html = items.map((it) => {
+    const base =
+      'px-2.5 py-1 rounded-full border text-[11px] font-mono transition-colors whitespace-nowrap';
+    const tone =
+      it.tone === 'warn'
+        ? 'border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/15'
+        : it.tone === 'good'
+          ? 'border-green-500/20 bg-green-500/10 text-green-300 hover:bg-green-500/15'
+          : 'border-navy-800/60 bg-navy-950/30 text-slate-300 hover:bg-navy-950/45';
+
+    const attrs = it.term ? `data-find="${escapeHtml(it.term)}" title="Find ${escapeHtml(it.term)}"` : '';
+    const tag = it.term ? 'button' : 'span';
+    return `<${tag} ${attrs} class="${base} ${tone}">${escapeHtml(it.label)} <span class="opacity-80">${it.count}</span></${tag}>`;
+  }).join('');
+
+  chips.innerHTML = html || '<span class="text-[11px] text-slate-500 font-mono">No findings</span>';
+  bar.classList.remove('hidden');
+}
+
 function formatCurrency(val: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 }
@@ -108,6 +172,7 @@ function renderOutput(highlightTerm?: string) {
     if (statExpense) statExpense.textContent = '$0.00';
     if (statNet) statNet.textContent = '$0.00';
     if (topList) topList.innerHTML = '<li class="text-xs text-slate-600">Analysis will appear here</li>';
+    renderFindingsBar();
     return;
   }
 
@@ -151,6 +216,8 @@ function renderOutput(highlightTerm?: string) {
       outputNote.classList.add('hidden');
     }
   }
+
+  renderFindingsBar();
 }
 
 function renderAnalysis() {
@@ -762,6 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSearchPrev = $('btn-search-prev') as HTMLButtonElement | null;
   const btnSearchNext = $('btn-search-next') as HTMLButtonElement | null;
   const searchNav = $('search-nav');
+  const findingsChips = $('findings-chips');
 
   let currentMatchIndex = -1;
   let matchElements: HTMLElement[] = [];
@@ -799,6 +867,18 @@ document.addEventListener('DOMContentLoaded', () => {
     openSearch();
   });
   btnSearchClose?.addEventListener('click', closeSearch);
+
+  // Findings chips → jump to matches using existing search tooling
+  findingsChips?.addEventListener('click', (e) => {
+    const target = (e.target as HTMLElement | null)?.closest?.('button[data-find]') as HTMLButtonElement | null;
+    const term = target?.dataset?.find;
+    if (!term) return;
+    openSearch();
+    if (searchInput) {
+      searchInput.value = term;
+      searchInput.dispatchEvent(new Event('input'));
+    }
+  });
   
   console.log('Search event listeners attached', { 
     btnSearchOpen: !!btnSearchOpen, 
