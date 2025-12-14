@@ -49,6 +49,9 @@ let stagedKind: 'csv' | 'xlsx' | 'pdf' | 'unknown' = 'unknown';
 let stagedPdfMeta: PdfExtractMeta | null = null;
 let preflight: PreflightReport | null = null;
 let customRemoveTerms: string[] = [];
+let latestSourceText = '';
+let compareMode = false;
+let highlightChanges = false;
 
 const $ = (id: string) => document.getElementById(id);
 
@@ -150,6 +153,8 @@ function renderOutput(highlightTerm?: string) {
   const filenameEl = $('output-filename');
   const outputNote = $('output-note');
   const btnSearchOpen = $('btn-search-open') as HTMLButtonElement | null;
+  const compareBtn = $('btn-compare') as HTMLButtonElement | null;
+  const highlightBtn = $('btn-highlight-changes') as HTMLButtonElement | null;
 
   if (!outputEl || !outputContainer || !emptyEl || !filenameEl) return;
 
@@ -161,6 +166,8 @@ function renderOutput(highlightTerm?: string) {
     downloadBtn && (downloadBtn.disabled = true);
     aiBtn && (aiBtn.disabled = true);
     btnSearchOpen && (btnSearchOpen.disabled = true);
+    compareBtn && (compareBtn.disabled = true);
+    highlightBtn && (highlightBtn.disabled = true);
     outputNote?.classList.add('hidden');
     
     // Stats reset
@@ -201,6 +208,8 @@ function renderOutput(highlightTerm?: string) {
   downloadBtn && (downloadBtn.disabled = !out);
   aiBtn && (aiBtn.disabled = !out);
   btnSearchOpen && (btnSearchOpen.disabled = !out);
+  compareBtn && (compareBtn.disabled = !out);
+  highlightBtn && (highlightBtn.disabled = !out);
 
   const ext =
     activeFormat === 'markdown' || activeFormat === 'storyline'
@@ -402,6 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!textarea || !btnProcess) return;
   const textareaEl: HTMLTextAreaElement = textarea;
+  latestSourceText = textareaEl.value || '';
 
   // Workflow stepper (Upload → Review → Export/AI)
   const wfStep1 = $('wf-step-1');
@@ -631,6 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = await readFileText(file);
         // Keep textarea populated for transparency/debugging
         textareaEl.value = text;
+        latestSourceText = text;
         const rows = rowsFromCsvText(text);
         stagedRows = rows;
         preflight = anonymizer.preflightRows(rows);
@@ -640,6 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stagedRows = rows;
         // Don’t dump binary into textarea; show a hint
         textareaEl.value = `# Loaded ${file.name}\n# Parsed as XLSX into ${rows.length} rows\n`;
+        latestSourceText = textareaEl.value;
         preflight = anonymizer.preflightRows(rows);
       } else if (stagedKind === 'pdf') {
         const buf = await readFileArrayBuffer(file);
@@ -647,6 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stagedRows = rows;
         stagedPdfMeta = meta;
         textareaEl.value = `# Loaded ${file.name}\n# Extracted PDF text into ${rows.length} rows\n`;
+        latestSourceText = textareaEl.value;
         preflight = anonymizer.preflightRows(rows);
 
         // Show page range controls if confidence is low or if user wants to fine-tune
@@ -739,12 +752,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btnProcess.disabled = isProcessing || !textarea.value.trim();
     // best effort; only meaningful once header exists
     if (textarea.value.length < 2000) tryLoadSavedMapping();
+    latestSourceText = textarea.value;
     updateWorkflowFromState();
   });
 
   // Clear
   btnClear?.addEventListener('click', () => {
     textarea.value = '';
+    latestSourceText = '';
     outputJSON = null;
     stagedRows = null;
     stagedPdfMeta = null;
@@ -821,6 +836,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Search & Destroy Logic
   const btnSearchOpen = $('btn-search-open') as HTMLButtonElement | null;
+  const btnCompare = $('btn-compare') as HTMLButtonElement | null;
+  const btnHighlightChanges = $('btn-highlight-changes') as HTMLButtonElement | null;
+  const outputCompareWrap = $('output-compare-wrap');
+  const outputOriginalPane = $('output-original-pane');
+  const outputOriginalEl = $('output-original');
+  const outputSanitizedLabel = $('output-sanitized-label');
   const defaultHeader = $('default-header');
   const searchBar = $('search-bar');
   const searchInput = $('search-input') as HTMLInputElement | null;
@@ -837,6 +858,70 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentMatchIndex = -1;
   let matchElements: HTMLElement[] = [];
   let searchMatches: Array<{ tIdx: number, field: 'description' | 'merchant', start?: number, length?: number }> = [];
+
+  const applyCompareLayout = () => {
+    if (!outputCompareWrap || !outputOriginalPane || !outputSanitizedLabel) return;
+    if (compareMode) {
+      outputCompareWrap.classList.add('md:grid-cols-2');
+      outputOriginalPane.classList.remove('hidden');
+      outputSanitizedLabel.classList.remove('hidden');
+    } else {
+      outputCompareWrap.classList.remove('md:grid-cols-2');
+      outputOriginalPane.classList.add('hidden');
+      outputSanitizedLabel.classList.add('hidden');
+    }
+  };
+
+  const highlightSource = (raw: string) => {
+    const safe = escapeHtml(raw || '');
+    // Basic redaction highlights (mirrors anonymizer patterns without importing them)
+    const patterns: Array<[RegExp, string]> = [
+      [/\b(?:\d[ -]*?){13,16}\b/g, 'card'],
+      [/\b\d{3}-\d{2}-\d{4}\b/g, 'ssn'],
+      [/[\w\.-]+@[\w\.-]+\.\w+/g, 'email'],
+      [/\b(?:\+?\d{1,2}[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b/g, 'phone'],
+      [/\bhttps?:\/\/\S+|\bwww\.\S+/gi, 'url'],
+      [/\b\d{5}(?:-\d{4})?\b/g, 'zip'],
+    ];
+    let out = safe;
+    for (const [re] of patterns) {
+      out = out.replace(re, (m) => `<mark>${m}</mark>`);
+    }
+    return out;
+  };
+
+  const renderOriginalPane = () => {
+    if (!outputOriginalEl) return;
+    if (!compareMode) {
+      outputOriginalEl.textContent = '';
+      return;
+    }
+    if (highlightChanges) outputOriginalEl.innerHTML = highlightSource(latestSourceText);
+    else outputOriginalEl.textContent = latestSourceText || '';
+  };
+
+  btnCompare?.addEventListener('click', () => {
+    compareMode = !compareMode;
+    try { localStorage.setItem('fa:compare', compareMode ? 'true' : 'false'); } catch { /* ignore */ }
+    applyCompareLayout();
+    renderOriginalPane();
+  });
+
+  btnHighlightChanges?.addEventListener('click', () => {
+    highlightChanges = !highlightChanges;
+    try { localStorage.setItem('fa:highlightChanges', highlightChanges ? 'true' : 'false'); } catch { /* ignore */ }
+    renderOriginalPane();
+  });
+
+  // Restore compare/highlight toggles
+  try {
+    compareMode = localStorage.getItem('fa:compare') === 'true';
+    highlightChanges = localStorage.getItem('fa:highlightChanges') === 'true';
+  } catch {
+    // ignore
+  }
+  applyCompareLayout();
+  renderOriginalPane();
 
   function openSearch() {
     console.log('openSearch called', { outputJSON: !!outputJSON, defaultHeader: !!defaultHeader, searchBar: !!searchBar });
