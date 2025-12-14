@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <!-- Shield Background -->
+  <path d="M512 100L200 250V450C200 650 350 850 512 950C674 850 824 650 824 450V250L512 100Z" fill="url(#gradient1)" stroke="#94a3b8" stroke-width="20"/>
+  
+  <!-- Lock Icon -->
+  <circle cx="512" cy="450" r="150" fill="url(#gradient2)" stroke="#94a3b8" stroke-width="15"/>
+  <rect x="462" y="450" width="100" height="120" rx="10" fill="#1e293b"/>
+  <circle cx="512" cy="420" r="40" fill="none" stroke="#94a3b8" stroke-width="12"/>
+  
+  <!-- Network Nodes -->
+  <circle cx="300" cy="350" r="15" fill="#64748b"/>
+  <circle cx="350" cy="280" r="12" fill="#64748b"/>
+  <circle cx="720" cy="380" r="15" fill="#64748b"/>
+  <circle cx="680" cy="300" r="12" fill="#64748b"/>
+  
+  <!-- Connection Lines -->
+  <line x1="300" y1="350" x2="380" y2="400" stroke="#475569" stroke-width="3"/>
+  <line x1="720" y1="380" x2="640" y2="420" stroke="#475569" stroke-width="3"/>
+  
+  <!-- Binary Code -->
+  <text x="150" y="500" font-family="monospace" font-size="40" fill="#334155">01</text>
+  <text x="800" y="520" font-family="monospace" font-size="40" fill="#334155">10</text>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#334155;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
+
