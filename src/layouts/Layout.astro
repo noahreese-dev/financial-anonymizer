@@ -20,19 +20,47 @@ const { title } = Astro.props;
 	</head>
 	<body class="bg-navy-950 text-slate-200 antialiased selection:bg-brand-500 selection:text-white min-h-screen flex flex-col">
 		<header class="w-full py-4 px-6 sm:px-8 flex justify-between items-center border-b border-navy-900/50 bg-navy-950/80 backdrop-blur-sm z-40">
-			<div class="flex items-center gap-3 sm:gap-4">
-				<div class="w-11 h-11 sm:w-12 sm:h-12 flex-shrink-0">
-					<img src="/logo.svg" alt="Security Shield" class="w-full h-full" />
+			<div class="flex items-center gap-4 sm:gap-5">
+				<div class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 flex-shrink-0">
+					<img
+						src="/logo.png"
+						alt="Intelligence Masters Security Shield"
+						class="w-full h-full object-contain drop-shadow-2xl contrast-125 saturate-125"
+					/>
 				</div>
 				<div>
-					<div class="font-bold text-base sm:text-lg text-white tracking-tight">Financial Anonymizer</div>
-					<div class="text-[9px] sm:text-[10px] text-slate-500 font-medium uppercase tracking-wider">Protection & Trust • Secure Processing</div>
+					<div class="font-bold text-lg sm:text-xl text-white tracking-tight">Financial Anonymizer</div>
+					<div class="text-[10px] sm:text-[11px] text-slate-500 font-medium uppercase tracking-wider">Protection & Trust • Secure Processing</div>
 				</div>
 			</div>
-			<div class="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-green-500/10 rounded-full border border-green-500/20">
-				<div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-500/50"></div>
-				<span class="text-[10px] sm:text-xs font-semibold text-green-400 uppercase tracking-wider hidden sm:inline">Secure Enclave Active</span>
-				<span class="text-[10px] font-semibold text-green-400 uppercase tracking-wider sm:hidden">Secure</span>
+			<div class="flex items-center gap-2 sm:gap-3">
+				<div class="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-green-500/10 rounded-full border border-green-500/20">
+					<div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-500/50"></div>
+					<span class="text-[10px] sm:text-xs font-semibold text-green-400 uppercase tracking-wider hidden sm:inline">Secure Enclave Active</span>
+					<span class="text-[10px] font-semibold text-green-400 uppercase tracking-wider sm:hidden">Secure</span>
+				</div>
+				<button 
+					id="theme-toggle" 
+					class="p-2 sm:p-2.5 rounded-xl bg-navy-900/50 border border-navy-800/50 hover:bg-navy-800 transition-all group"
+					title="Toggle Theme"
+					aria-label="Toggle light/dark mode">
+					<!-- Sun icon (shows in light/sun mode, hidden by default) -->
+					<svg id="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400 group-hover:text-white transition-colors hidden">
+						<circle cx="12" cy="12" r="5"></circle>
+						<line x1="12" y1="1" x2="12" y2="3"></line>
+						<line x1="12" y1="21" x2="12" y2="23"></line>
+						<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+						<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+						<line x1="1" y1="12" x2="3" y2="12"></line>
+						<line x1="21" y1="12" x2="23" y2="12"></line>
+						<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+						<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+					</svg>
+					<!-- Moon icon (shows in dark mode) -->
+					<svg id="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400 group-hover:text-white transition-colors">
+						<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+					</svg>
+				</button>
 			</div>
 		</header>
 

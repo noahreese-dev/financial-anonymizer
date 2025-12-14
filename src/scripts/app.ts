@@ -2,6 +2,43 @@ import { FinancialAnonymizer, type OutputFormat, type DetailLevel, type Prefligh
 import { signatureFromHeaders } from '../lib/dialect';
 import { detectFileKind, readFileArrayBuffer, readFileText, rowsFromCsvText, rowsFromXlsx, rowsFromPdfText, type PdfExtractMeta } from '../lib/ingest';
 
+// Theme management
+const THEME_KEY = 'financial-anonymizer-theme';
+
+function getTheme(): 'light' | 'dark' {
+  const stored = localStorage.getItem(THEME_KEY);
+  return (stored === 'light' || stored === 'dark') ? stored : 'dark';
+}
+
+function setTheme(theme: 'light' | 'dark') {
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme(theme);
+}
+
+function applyTheme(theme: 'light' | 'dark') {
+  const body = document.body;
+  const iconSun = document.getElementById('icon-sun');
+  const iconMoon = document.getElementById('icon-moon');
+  
+  if (theme === 'light') {
+    body.classList.add('light-mode');
+    // Light (sun) mode: show sun icon
+    iconSun?.classList.remove('hidden');
+    iconMoon?.classList.add('hidden');
+  } else {
+    body.classList.remove('light-mode');
+    // Dark (moon) mode: show moon icon
+    iconSun?.classList.add('hidden');
+    iconMoon?.classList.remove('hidden');
+  }
+}
+
+function toggleTheme() {
+  const current = getTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+}
+
 let activeFormat: OutputFormat = 'markdown';
 let activeDetailLevel: DetailLevel = 'minimal';
 let outputJSON: SanitizedData | null = null;
@@ -265,6 +302,15 @@ function setProcessing(next: boolean) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Apply saved theme on load
+  applyTheme(getTheme());
+
+  // Theme toggle button
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
+
   const fileInput = $('file-input') as HTMLInputElement | null;
   const btnUpload = $('btn-upload') as HTMLButtonElement | null;
   const btnClear = $('btn-clear') as HTMLButtonElement | null;

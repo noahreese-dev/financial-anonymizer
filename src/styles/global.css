@@ -9,6 +9,11 @@
   --color-navy-700: #334155;
   --color-navy-600: #475569;
 
+  --color-navy-50: #f0f4f8;
+  --color-navy-100: #d9e2ec;
+  --color-navy-200: #b0c4de;
+  --color-navy-300: #7a9cc6;
+
   --color-brand-400: #60a5fa;
   --color-brand-500: #3b82f6;
   --color-brand-600: #2563eb;
@@ -24,6 +29,33 @@ body {
   background-color: var(--color-navy-950);
   color: #f8fafc;
   font-family: var(--font-sans);
+}
+
+/* Light Mode Override */
+body.light-mode {
+  /* Sun mode: still navy, just brighter + subtle “sunlight” glow */
+  color: #f8fafc;
+
+  /* Medium-lighter navy palette (keeps contrast for existing text/borders) */
+  --color-navy-950: #0b1630;
+  --color-navy-900: #12224a;
+  /* Slightly brighter border tones for a crisper “sun mode” look */
+  --color-navy-800: #234074;
+  --color-navy-700: #2f5592;
+  --color-navy-600: #3f6ab0;
+
+  background-color: var(--color-navy-950);
+  background-image:
+    radial-gradient(900px 500px at 20% -10%, rgba(96, 165, 250, 0.30), rgba(96, 165, 250, 0) 60%),
+    radial-gradient(700px 420px at 85% 10%, rgba(34, 211, 238, 0.18), rgba(34, 211, 238, 0) 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.00) 42%),
+    linear-gradient(180deg, var(--color-navy-950) 0%, var(--color-navy-900) 100%);
+  background-attachment: fixed;
+}
+
+/* Sun mode: make outlines crisper without accidentally outlining borderless UI (e.g. format tabs) */
+body.light-mode :where(.border) {
+  border-width: 1.5px;
 }
 
 @keyframes fadeIn {

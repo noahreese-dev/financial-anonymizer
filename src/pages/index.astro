@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Financial Anonymizer">
-  <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(400px,_480px)_1fr] gap-6">
+  <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(400px,_480px)_1fr] gap-10 lg:gap-6">
     <!-- ═════════════════════════════════════════════════════════════════ -->
     <!-- LEFT PANEL: INPUT & CONFIGURATION -->
     <!-- ═════════════════════════════════════════════════════════════════ -->
@@ -163,6 +163,19 @@ import Layout from '../layouts/Layout.astro';
       
       <!-- Output Panel -->
       <div class="bg-navy-900/50 backdrop-blur-md border border-navy-800/50 rounded-xl shadow-xl overflow-hidden flex flex-col" style="height: calc(100vh - 180px); min-height: 600px;">
+
+        <!-- Review Mode Header -->
+        <div class="flex-shrink-0 px-5 py-4 border-b border-navy-800/50">
+          <div class="text-center">
+            <div class="text-sm sm:text-base font-bold tracking-wide text-white">
+              Review Mode
+            </div>
+            <div class="mx-auto mt-2 h-px w-28 bg-navy-700/70"></div>
+            <div class="mt-2 text-[11px] text-slate-400">
+              Review and refine your sanitized output before you export or launch AI analysis.
+            </div>
+          </div>
+        </div>
         
         <!-- Top Bar: Format Tabs + Review Mode + Detail Level -->
         <div class="flex-shrink-0 px-5 py-4 border-b border-navy-800/50 flex items-center justify-between gap-4">
@@ -188,16 +201,6 @@ import Layout from '../layouts/Layout.astro';
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1.5"><path d="M4 19V5"></path><path d="M8 19V10"></path><path d="M12 19V7"></path><path d="M16 19V13"></path><path d="M20 19V9"></path></svg>
               Storyline
             </button>
-          </div>
-
-          <!-- Review Mode Pill -->
-          <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-800/30 rounded-full text-xs text-slate-400 border border-slate-700/50">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 16v-4"></path>
-              <path d="M12 8h.01"></path>
-            </svg>
-            Review Mode
           </div>
 
           <!-- Detail Level Dropdown -->
