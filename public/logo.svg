@@ -1,36 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
-  <!-- Shield Background -->
-  <path d="M512 100L200 250V450C200 650 350 850 512 950C674 850 824 650 824 450V250L512 100Z" fill="url(#gradient1)" stroke="#94a3b8" stroke-width="20"/>
-  
-  <!-- Lock Icon -->
-  <circle cx="512" cy="450" r="150" fill="url(#gradient2)" stroke="#94a3b8" stroke-width="15"/>
-  <rect x="462" y="450" width="100" height="120" rx="10" fill="#1e293b"/>
-  <circle cx="512" cy="420" r="40" fill="none" stroke="#94a3b8" stroke-width="12"/>
-  
-  <!-- Network Nodes -->
-  <circle cx="300" cy="350" r="15" fill="#64748b"/>
-  <circle cx="350" cy="280" r="12" fill="#64748b"/>
-  <circle cx="720" cy="380" r="15" fill="#64748b"/>
-  <circle cx="680" cy="300" r="12" fill="#64748b"/>
-  
-  <!-- Connection Lines -->
-  <line x1="300" y1="350" x2="380" y2="400" stroke="#475569" stroke-width="3"/>
-  <line x1="720" y1="380" x2="640" y2="420" stroke="#475569" stroke-width="3"/>
-  
-  <!-- Binary Code -->
-  <text x="150" y="500" font-family="monospace" font-size="40" fill="#334155">01</text>
-  <text x="800" y="520" font-family="monospace" font-size="40" fill="#334155">10</text>
-  
-  <!-- Gradients -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 650" fill="none">
+  <!-- Shield Outline with Flowing Ribbon -->
   <defs>
-    <linearGradient id="gradient1" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#cbd5e1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#94a3b8;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#334155;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    <linearGradient id="lockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f1f5f9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#cbd5e1;stop-opacity:1" />
     </linearGradient>
   </defs>
+  
+  <!-- Left Ribbon -->
+  <path d="M80 100 Q60 250 80 400 L120 420 Q100 260 120 120 Z" fill="url(#metalGrad)" opacity="0.9"/>
+  
+  <!-- Right Ribbon -->
+  <path d="M432 100 Q452 250 432 400 L392 420 Q412 260 392 120 Z" fill="url(#metalGrad)" opacity="0.9"/>
+  
+  <!-- Main Shield Body -->
+  <path d="M256 50 L140 110 L140 280 Q140 380 256 480 Q372 380 372 280 L372 110 Z" 
+        fill="#1e293b" stroke="url(#metalGrad)" stroke-width="12"/>
+  
+  <!-- Top Crown of Shield -->
+  <path d="M180 90 Q256 60 332 90 L332 100 Q256 70 180 100 Z" fill="url(#metalGrad)"/>
+  
+  <!-- Geometric Lock Circle -->
+  <circle cx="256" cy="240" r="80" fill="url(#lockGrad)" opacity="0.3"/>
+  <circle cx="256" cy="240" r="70" fill="none" stroke="url(#lockGrad)" stroke-width="4"/>
+  
+  <!-- Lock Shackle (Top Arc) -->
+  <path d="M226 200 Q226 170 256 170 Q286 170 286 200" 
+        fill="none" stroke="url(#lockGrad)" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- Geometric Lock Pattern (Faceted) -->
+  <g opacity="0.9">
+    <!-- Top facet -->
+    <polygon points="256,210 276,225 256,240 236,225" fill="url(#lockGrad)"/>
+    <!-- Left facet -->
+    <polygon points="236,225 226,245 236,265 256,250" fill="#94a3b8"/>
+    <!-- Right facet -->
+    <polygon points="276,225 286,245 276,265 256,250" fill="#cbd5e1"/>
+    <!-- Bottom left -->
+    <polygon points="236,265 246,285 256,280 256,250" fill="#64748b"/>
+    <!-- Bottom right -->
+    <polygon points="276,265 266,285 256,280 256,250" fill="#94a3b8"/>
+  </g>
+  
+  <!-- Lock Body Rectangle -->
+  <rect x="226" y="260" width="60" height="70" rx="8" fill="#0f172a" stroke="url(#lockGrad)" stroke-width="3"/>
+  
+  <!-- Keyhole -->
+  <circle cx="256" cy="285" r="8" fill="url(#lockGrad)"/>
+  <rect x="252" y="285" width="8" height="25" rx="2" fill="url(#lockGrad)"/>
+  
+  <!-- Network Nodes (Left) -->
+  <circle cx="160" cy="200" r="6" fill="#64748b"/>
+  <circle cx="140" cy="160" r="5" fill="#64748b"/>
+  <line x1="160" y1="200" x2="190" y2="220" stroke="#475569" stroke-width="2"/>
+  <line x1="140" y1="160" x2="180" y2="200" stroke="#475569" stroke-width="2"/>
+  
+  <!-- Network Nodes (Right) -->
+  <circle cx="352" cy="210" r="6" fill="#64748b"/>
+  <circle cx="372" cy="170" r="5" fill="#64748b"/>
+  <line x1="352" y1="210" x2="322" y2="230" stroke="#475569" stroke-width="2"/>
+  <line x1="372" y1="170" x2="332" y2="210" stroke="#475569" stroke-width="2"/>
+  
+  <!-- Binary Code Decoration -->
+  <text x="100" y="340" font-family="monospace" font-size="24" fill="#334155" opacity="0.6">01</text>
+  <text x="380" y="350" font-family="monospace" font-size="24" fill="#334155" opacity="0.6">10</text>
+  <text x="120" y="300" font-family="monospace" font-size="20" fill="#334155" opacity="0.5">10</text>
+  <text x="365" y="310" font-family="monospace" font-size="20" fill="#334155" opacity="0.5">01</text>
 </svg>
-
