@@ -333,6 +333,43 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!textarea || !btnProcess) return;
   const textareaEl: HTMLTextAreaElement = textarea;
 
+  // Workflow stepper (Upload → Review → Export/AI)
+  const wfStep1 = $('wf-step-1');
+  const wfStep2 = $('wf-step-2');
+  const wfStep3 = $('wf-step-3');
+  function setWorkflowStep(step: 1 | 2 | 3) {
+    const steps = [
+      { el: wfStep1, idx: 1 },
+      { el: wfStep2, idx: 2 },
+      { el: wfStep3, idx: 3 },
+    ] as const;
+
+    for (const s of steps) {
+      if (!s.el) continue;
+      const isActive = s.idx === step;
+      const isDone = s.idx < step;
+
+      s.el.classList.toggle('opacity-60', !isActive && !isDone);
+      s.el.classList.toggle('opacity-70', !isActive && isDone === false);
+      s.el.classList.toggle('opacity-100', isActive || isDone);
+
+      // Active emphasis
+      s.el.classList.toggle('bg-navy-950/40', isActive);
+      s.el.classList.toggle('bg-navy-950/20', !isActive);
+
+      // Border emphasis
+      s.el.classList.toggle('border-brand-500/30', isActive);
+      s.el.classList.toggle('border-navy-800/60', !isActive);
+    }
+  }
+
+  function updateWorkflowFromState() {
+    const hasInput = !!stagedRows || !!textareaEl.value.trim();
+    if (!hasInput) return setWorkflowStep(1);
+    if (!outputJSON) return setWorkflowStep(2);
+    return setWorkflowStep(3);
+  }
+
   // Custom remove terms (session only, per user request)
   customRemoveTerms = [];
 
@@ -555,11 +592,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderPlannedRemovals(preflight);
       setError(null);
+      updateWorkflowFromState();
     } catch (e: any) {
       setError(e?.message ?? 'Preflight failed.');
       stagedRows = null;
       stagedPdfMeta = null;
       preflight = null;
+      updateWorkflowFromState();
     } finally {
       if (btnProcess) btnProcess.disabled = isProcessing || !(!!stagedRows || !!textareaEl.value.trim());
     }
@@ -630,6 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnProcess.disabled = isProcessing || !textarea.value.trim();
     // best effort; only meaningful once header exists
     if (textarea.value.length < 2000) tryLoadSavedMapping();
+    updateWorkflowFromState();
   });
 
   // Clear
@@ -649,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hide analysis panels
     $('analysis')?.classList.add('hidden');
     $('diagnostics')?.classList.add('hidden');
+    updateWorkflowFromState();
   });
 
   // Process
@@ -664,6 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setDiagnosticsFromOutput(null);
 
     setProcessing(true);
+    updateWorkflowFromState();
 
     setTimeout(() => {
       try {
@@ -697,11 +739,15 @@ document.addEventListener('DOMContentLoaded', () => {
       } finally {
         setProcessing(false);
         renderOutput();
+        updateWorkflowFromState();
       }
     }, 350); // UI breathing room
   }
 
   btnProcess.addEventListener('click', runProcessing);
+
+  // Initial workflow state on load
+  updateWorkflowFromState();
 
   // Search & Destroy Logic
   const btnSearchOpen = $('btn-search-open') as HTMLButtonElement | null;
