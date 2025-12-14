@@ -84,16 +84,16 @@ function renderFindingsBar() {
     if (count > 0) items.push({ label, count, term, tone: 'warn' });
   };
 
-  addPII('Email', 'email' as any, '[EMAIL]');
-  addPII('Phone', 'phone' as any, '[PHONE]');
-  addPII('SSN', 'ssn' as any, '[SSN]');
-  addPII('URL', 'url' as any, '[URL]');
-  addPII('Address', 'address' as any, '[ADDRESS]');
-  addPII('ZIP', 'zip' as any, '[ZIP]');
+  addPII('Email', 'email' as any, 'EMAIL');
+  addPII('Phone', 'phone' as any, 'PHONE');
+  addPII('SSN', 'ssn' as any, 'SSN');
+  addPII('URL', 'url' as any, 'URL');
+  addPII('Address', 'address' as any, 'ADDRESS');
+  addPII('ZIP', 'zip' as any, 'ZIP');
   // Cards are replaced with ****
   addPII('Card', 'card' as any, '****');
   // Locations are replaced with [LOC] when enabled
-  addPII('Loc', 'location' as any, '[LOC]');
+  addPII('Loc', 'location' as any, 'LOC');
 
   if ((rep.idTokensRemoved ?? 0) > 0) items.push({ label: 'IDs', count: rep.idTokensRemoved, tone: 'neutral' });
   if ((rep.merchantNormalized ?? 0) > 0) items.push({ label: 'Normalized', count: rep.merchantNormalized, tone: 'good' });
@@ -1259,6 +1259,19 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Delete All clicked for term:', term);
     if (!term) {
       console.log('No term to delete');
+      return;
+    }
+
+    // Known PII placeholders - already handled by anonymizer, no need to add to custom terms
+    const piiPlaceholders = ['PHONE', 'EMAIL', 'SSN', 'URL', 'ADDRESS', 'ZIP', 'LOC', 'CARD', '****'];
+    const isPiiPlaceholder = piiPlaceholders.some(p =>
+      term.toUpperCase() === p || term === `[${p}]`
+    );
+
+    if (isPiiPlaceholder) {
+      // Just close search - PII is already being masked by the anonymizer
+      console.log('PII placeholder detected, skipping reprocess (already masked)');
+      closeSearch();
       return;
     }
 
