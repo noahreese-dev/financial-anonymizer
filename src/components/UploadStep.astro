@@ -1,0 +1,71 @@
+<div id="step-upload" class="flex flex-col items-center justify-center w-full max-w-2xl animate-fade-in transition-all duration-500">
+  <div class="text-center mb-10">
+     <h1 class="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">Anonymize Your Data</h1>
+     <p class="text-slate-400 text-lg font-light">Secure Input Environment</p>
+  </div>
+
+  <div class="w-full bg-navy-900/50 backdrop-blur-sm border border-navy-800 rounded-3xl p-1 shadow-2xl ring-1 ring-white/5">
+     <!-- Tabs -->
+     <div class="flex border-b border-navy-800/50 p-2 gap-2">
+        <button class="flex-1 py-2.5 text-sm font-medium text-white bg-navy-800/80 rounded-xl shadow-sm flex items-center justify-center gap-2 border border-navy-700/50 transition-all hover:bg-navy-800">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+          Upload File
+        </button>
+        <button class="flex-1 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors flex items-center justify-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Paste Text
+        </button>
+     </div>
+
+     <!-- Dropzone -->
+     <div class="p-8 md:p-12">
+        <div 
+          id="dropzone"
+          class="border-2 border-dashed border-navy-700 rounded-2xl bg-navy-950/30 min-h-[320px] flex flex-col items-center justify-center transition-all duration-300 group hover:border-brand-500/50 hover:bg-navy-900/40 cursor-pointer relative overflow-hidden"
+        >
+           <input type="file" id="file-input" class="absolute inset-0 opacity-0 cursor-pointer z-10" accept=".csv" />
+           
+           <div class="w-20 h-20 bg-navy-800/80 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-xl shadow-black/20 group-hover:shadow-brand-500/10 border border-white/5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300 group-hover:text-brand-400 transition-colors"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+           </div>
+           
+           <h3 class="text-xl font-semibold text-white mb-2">Drag file here</h3>
+           <p class="text-slate-500 text-sm mb-8 font-light">or click to browse</p>
+           
+           <div class="px-4 py-1.5 rounded-full bg-navy-800 border border-navy-700 text-[10px] font-mono text-slate-400 uppercase tracking-widest hover:border-brand-500/30 transition-colors">
+             CSV, XLS, TXT
+           </div>
+        </div>
+        <div id="file-name-display" class="hidden mt-4 text-center">
+            <p class="text-brand-400 text-sm font-medium flex items-center justify-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                <span id="selected-filename">filename.csv</span>
+            </p>
+        </div>
+     </div>
+
+     <!-- Footer -->
+     <div class="p-6 border-t border-navy-800/50 bg-navy-900/30 flex justify-between items-center rounded-b-3xl">
+        <div class="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+           End-to-end encrypted
+        </div>
+        
+        <button 
+          id="btn-to-settings"
+          disabled
+          class="group px-6 py-3 bg-white text-navy-950 font-bold rounded-xl text-sm hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-white/5 transform active:scale-95"
+        >
+          Process Data
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+     </div>
+  </div>
+  
+  <div class="mt-8">
+     <button id="btn-load-sample" class="text-xs text-navy-600 hover:text-navy-500 transition-colors font-mono border border-navy-800 hover:border-navy-700 rounded-full px-4 py-1">
+        Use Sample Data
+     </button>
+  </div>
+</div>
+

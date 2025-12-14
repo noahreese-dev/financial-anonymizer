@@ -1,0 +1,520 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Financial Anonymizer">
+  <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(400px,_480px)_1fr] gap-6">
+    <!-- ═════════════════════════════════════════════════════════════════ -->
+    <!-- LEFT PANEL: INPUT & CONFIGURATION -->
+    <!-- ═════════════════════════════════════════════════════════════════ -->
+    <section class="flex flex-col gap-6">
+      
+      <!-- Info Card -->
+      <div class="p-4 bg-navy-900/30 backdrop-blur-sm border border-navy-800/50 rounded-xl">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-5 h-5 rounded-full bg-brand-500/20 flex items-center justify-center mt-0.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-400">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-slate-200 mb-1">Financial Data Sanitization</div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              System is optimized for bank statements and transaction CSVs. PII will be redacted locally before analysis.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Source Data -->
+      <div class="bg-navy-900/50 backdrop-blur-md border border-navy-800/50 rounded-xl shadow-xl">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-navy-800/50">
+          <div class="flex items-center gap-2 text-sm font-semibold text-slate-100">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <path d="M9 3v18"></path>
+            </svg>
+            Source Data
+          </div>
+          <input id="file-input" type="file" accept=".csv,.xlsx,.xls,.pdf" class="hidden" />
+          <button id="btn-upload" class="text-xs bg-navy-950/40 hover:bg-navy-950/70 border border-navy-800/50 text-slate-200 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Upload
+          </button>
+        </div>
+
+        <div id="dropzone" class="relative p-5">
+          <textarea
+            id="input-csv"
+            class="w-full min-h-[360px] bg-navy-950/30 border border-navy-800/50 rounded-xl p-4 font-mono text-xs text-slate-300 placeholder:text-slate-600 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/40 focus:outline-none resize-none transition-all"
+            placeholder="// Paste your CSV or JSON transaction data here..."
+            spellcheck="false"
+          ></textarea>
+
+          <div id="drop-overlay" class="hidden absolute inset-5 bg-navy-950/90 backdrop-blur-sm rounded-xl border-2 border-dashed border-brand-500/60 flex flex-col items-center justify-center text-brand-400 pointer-events-none z-10">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-3 animate-bounce">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <p class="font-semibold text-sm">Drop file here</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuration (Collapsible) -->
+      <details id="configuration-section" class="group bg-navy-900/50 backdrop-blur-md border border-navy-800/50 rounded-xl shadow-xl overflow-hidden">
+        <summary class="cursor-pointer select-none px-5 py-4 hover:bg-navy-900/70 transition-colors flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400 transition-transform group-open:rotate-90">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span class="text-sm font-semibold text-slate-100">Configuration</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"></path>
+          </svg>
+        </summary>
+
+        <div class="px-5 pb-5 space-y-4 animate-fadeIn">
+          <!-- Planned Removals -->
+          <div class="p-4 bg-navy-950/30 rounded-lg border border-navy-800/50">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Planned Removals</div>
+            <div id="planned-removals" class="text-xs text-slate-500 font-mono leading-relaxed min-h-[40px]">
+              • Credit/Debit card numbers<br>
+              • Email addresses & phone numbers<br>
+              • SSN patterns<br>
+              • Transaction IDs & reference codes<br>
+              • URLs & physical addresses
+            </div>
+          </div>
+
+          <!-- Custom Remove Terms -->
+          <div>
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block">Custom Remove Terms</label>
+            <div class="flex gap-2 mb-2">
+              <input
+                id="custom-term-input"
+                type="text"
+                placeholder="e.g. 'John Doe' or '12345'"
+                class="flex-1 bg-navy-950/30 border border-navy-800/50 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/40 focus:outline-none"
+              />
+              <button id="btn-add-term" class="px-4 py-2 bg-brand-600/20 hover:bg-brand-600/30 text-brand-300 text-xs font-semibold rounded-lg border border-brand-500/30 transition-colors">
+                Add
+              </button>
+            </div>
+            <div id="custom-terms-chips" class="flex flex-wrap gap-2 min-h-[32px]"></div>
+          </div>
+
+          <!-- Ultra-clean Export -->
+          <label class="flex items-center gap-3 p-3 bg-navy-950/30 rounded-lg border border-navy-800/50 cursor-pointer hover:bg-navy-950/50 transition-colors">
+            <input id="ultra-clean-toggle" type="checkbox" class="w-4 h-4 rounded bg-navy-950 border-navy-700 text-brand-500 focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-0" />
+            <div>
+              <div class="text-xs font-semibold text-slate-200">Ultra-clean export</div>
+              <div class="text-[10px] text-slate-500">Remove ALL merchant details (max anonymity)</div>
+            </div>
+          </label>
+
+          <!-- PDF Controls (conditional) -->
+          <div id="pdf-controls" class="hidden p-4 bg-navy-950/30 rounded-lg border border-navy-800/50">
+            <div class="text-xs font-semibold text-slate-300 mb-3">PDF Page Range</div>
+            <div class="flex items-center gap-3">
+              <input id="pdf-page-start" type="number" min="1" class="w-20 bg-navy-950/40 border border-navy-800/50 rounded-lg px-2 py-1.5 text-xs text-slate-200" placeholder="Start" />
+              <span class="text-xs text-slate-500">to</span>
+              <input id="pdf-page-end" type="number" min="1" class="w-20 bg-navy-950/40 border border-navy-800/50 rounded-lg px-2 py-1.5 text-xs text-slate-200" placeholder="End" />
+              <button id="btn-preflight-rerun" class="ml-auto text-xs bg-navy-950/40 hover:bg-navy-950/70 border border-navy-800/50 text-slate-200 px-3 py-1.5 rounded-lg transition-colors">
+                Re-scan
+              </button>
+            </div>
+            <div id="pdf-meta" class="mt-2 text-[10px] font-mono text-slate-500">—</div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Anonymize Button -->
+      <button id="btn-process" disabled class="w-full py-4 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3 group">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-disabled:opacity-50">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
+        </svg>
+        <span id="btn-process-text">Anonymize Data</span>
+      </button>
+
+      <!-- Clear Button -->
+      <button id="btn-clear" class="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center justify-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Clear All
+      </button>
+    </section>
+
+    <!-- ═════════════════════════════════════════════════════════════════ -->
+    <!-- RIGHT PANEL: OUTPUT & ANALYSIS -->
+    <!-- ═════════════════════════════════════════════════════════════════ -->
+    <section class="flex flex-col gap-6">
+      
+      <!-- Output Panel -->
+      <div class="bg-navy-900/50 backdrop-blur-md border border-navy-800/50 rounded-xl shadow-xl overflow-hidden flex flex-col" style="height: calc(100vh - 180px); min-height: 600px;">
+        
+        <!-- Top Bar: Format Tabs + Review Mode + Detail Level -->
+        <div class="flex-shrink-0 px-5 py-4 border-b border-navy-800/50 flex items-center justify-between gap-4">
+          <!-- Format Tabs -->
+          <div class="flex bg-navy-950/50 rounded-lg p-1 border border-navy-800/50">
+            <button data-format="markdown" class="format-tab px-3 py-1.5 text-xs font-semibold rounded-md transition-all bg-brand-600/20 text-brand-300 border border-brand-500/30">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1.5"><path d="M3 3h18v18H3z"></path><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>
+              MD
+            </button>
+            <button data-format="json" class="format-tab px-3 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-500 hover:text-slate-300 hover:bg-navy-900/50">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path></svg>
+              JSON
+            </button>
+            <button data-format="csv" class="format-tab px-3 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-500 hover:text-slate-300 hover:bg-navy-900/50">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>
+              CSV
+            </button>
+            <button data-format="text" class="format-tab px-3 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-500 hover:text-slate-300 hover:bg-navy-900/50">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1.5"><path d="M4 6h16"></path><path d="M4 10h12"></path><path d="M4 14h12"></path><path d="M4 18h8"></path></svg>
+              Text
+            </button>
+            <button data-format="storyline" class="format-tab px-3 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-500 hover:text-slate-300 hover:bg-navy-900/50">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline mr-1.5"><path d="M4 19V5"></path><path d="M8 19V10"></path><path d="M12 19V7"></path><path d="M16 19V13"></path><path d="M20 19V9"></path></svg>
+              Storyline
+            </button>
+          </div>
+
+          <!-- Review Mode Pill -->
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-800/30 rounded-full text-xs text-slate-400 border border-slate-700/50">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4"></path>
+              <path d="M12 8h.01"></path>
+            </svg>
+            Review Mode
+          </div>
+
+          <!-- Detail Level Dropdown -->
+          <div class="relative">
+            <button id="detail-level-btn" class="flex items-center gap-2 px-3 py-1.5 bg-navy-950/50 hover:bg-navy-950/70 border border-navy-800/50 rounded-lg text-xs font-medium text-slate-300 transition-colors">
+              <span class="text-slate-500">Detail:</span>
+              <span id="detail-level-label" class="text-slate-200">Minimal</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-50">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            
+            <div id="detail-level-menu" class="hidden absolute top-full right-0 mt-2 w-56 bg-navy-900 border border-navy-700 rounded-xl shadow-2xl overflow-hidden z-50 animate-fadeIn">
+              <button data-detail="minimal" class="detail-option w-full px-4 py-3 text-left hover:bg-navy-800/50 transition-colors border-b border-navy-800/30 bg-navy-800/30">
+                <div class="text-xs font-semibold text-white mb-1">Minimal</div>
+                <div class="text-[10px] text-slate-400">Date, Description, Amount</div>
+              </button>
+              <button data-detail="standard" class="detail-option w-full px-4 py-3 text-left hover:bg-navy-800/50 transition-colors border-b border-navy-800/30">
+                <div class="text-xs font-semibold text-slate-200 mb-1">Standard</div>
+                <div class="text-[10px] text-slate-400">+ Merchant field</div>
+              </button>
+              <button data-detail="detailed" class="detail-option w-full px-4 py-3 text-left hover:bg-navy-800/50 transition-colors border-b border-navy-800/30">
+                <div class="text-xs font-semibold text-slate-200 mb-1">Detailed</div>
+                <div class="text-[10px] text-slate-400">+ Category field</div>
+              </button>
+              <button data-detail="debug" class="detail-option w-full px-4 py-3 text-left hover:bg-navy-800/50 transition-colors">
+                <div class="text-xs font-semibold text-slate-200 mb-1">Debug</div>
+                <div class="text-[10px] text-slate-400">+ Type, Source, Confidence</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output Header Bar (filename + actions) -->
+        <div id="output-header" class="flex-shrink-0 relative bg-navy-950/50 border-b border-navy-800/50 min-h-[52px]">
+          <!-- Mode 1: Default Header (filename + copy/download/search) -->
+          <div id="default-header" class="flex items-center justify-between px-5 py-3 h-[52px]">
+            <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400">
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+              <span id="output-filename">output.md</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="btn-copy" disabled class="px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-navy-800/50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="copy-icon">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="check-icon hidden text-green-400">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+                <span class="btn-text">Copy</span>
+              </button>
+
+              <button id="btn-download" disabled class="px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-navy-800/50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download
+              </button>
+
+              <div class="w-px h-5 bg-navy-700/50 mx-1"></div>
+
+              <button id="btn-search-open" disabled class="px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-navy-800/50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                Find
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode 2: Search Toolbar (Overlay) -->
+          <div id="search-bar" class="hidden absolute inset-0 bg-gradient-to-r from-navy-950 to-navy-900 border-b border-navy-700 h-[52px] px-2 sm:px-5 gap-1.5 sm:gap-2 z-30">
+            <div class="flex items-center justify-between h-full gap-1.5 sm:gap-2">
+              <!-- Search Input with Icon -->
+              <div class="flex-1 flex items-center gap-1.5 bg-navy-950/60 rounded-lg px-2 py-1.5 border border-navy-800/50 focus-within:border-brand-500/40 focus-within:ring-1 focus-within:ring-brand-500/20 transition-all max-w-[140px] sm:max-w-xs">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-400 flex-shrink-0">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input id="search-input" type="text" placeholder="Find..." class="flex-1 bg-transparent border-none text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none min-w-0" />
+              </div>
+
+              <!-- Match Counter & Navigation -->
+              <div class="flex items-center gap-1.5 sm:gap-2">
+                <div class="flex items-center gap-1 bg-navy-950/40 rounded-lg px-1.5 sm:px-2 py-1 border border-navy-800/30">
+                  <span id="search-count" class="text-[10px] sm:text-xs font-mono text-slate-400 min-w-[35px] sm:min-w-[45px] text-center">0</span>
+                  <div id="search-nav" class="flex items-center gap-0.5 pl-1 sm:pl-1.5 border-l border-navy-700/50">
+                    <button id="btn-search-prev" class="p-0.5 sm:p-1 rounded text-slate-400 hover:text-white hover:bg-navy-800/70 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Previous (Shift+Enter)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    </button>
+                    <button id="btn-search-next" class="p-0.5 sm:p-1 rounded text-slate-400 hover:text-white hover:bg-navy-800/70 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Next (Enter)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div id="search-actions" class="hidden items-center gap-1">
+                  <button id="btn-redact-one" class="px-1.5 sm:px-2 py-1 sm:py-1.5 bg-navy-800/50 hover:bg-navy-700 text-slate-300 hover:text-white text-[10px] sm:text-xs font-medium rounded-lg border border-navy-700/50 transition-all flex items-center gap-1 whitespace-nowrap" title="Delete This Match">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path></svg>
+                    <span>Del</span>
+                  </button>
+                  <button id="btn-redact-all" class="px-1.5 sm:px-2 py-1 sm:py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-bold rounded-lg border border-red-500/20 transition-all flex items-center gap-1 whitespace-nowrap" title="Delete All Occurrences">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+                    <span>All</span>
+                  </button>
+                </div>
+
+                <!-- Close Button -->
+                <button id="btn-search-close" class="p-1 sm:p-1.5 text-slate-500 hover:text-white hover:bg-navy-800/50 rounded-lg transition-colors" title="Close Search (Esc)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output Content Area -->
+        <div id="output-scroll-container" class="flex-1 overflow-auto custom-scrollbar bg-navy-950/30 relative">
+          <!-- Empty State -->
+          <div id="output-empty" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 gap-4 p-8">
+            <div class="w-20 h-20 rounded-2xl bg-navy-800/30 flex items-center justify-center">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-slate-600">
+                <path d="M9 12h6"></path>
+                <path d="M12 9v6"></path>
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              </svg>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-semibold text-slate-400 mb-1">Awaiting Input</div>
+              <p class="text-sm text-slate-600">Sanitized data will render here.</p>
+            </div>
+          </div>
+
+          <!-- Actual Output -->
+          <div id="output-container" class="hidden h-full flex flex-col">
+            <pre id="output" class="flex-1 w-full p-6 font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap break-words" contenteditable="true"></pre>
+            <div id="output-note" class="hidden px-6 py-3 text-xs text-slate-600 border-t border-navy-800/50 bg-navy-950/50">
+              Preview limited to first 500 rows. Use Download for full export.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow Section -->
+      <div class="bg-navy-900/30 border border-navy-800/50 rounded-xl p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-[10px] uppercase tracking-widest text-brand-400 font-bold mb-1">Workflow</div>
+            <div class="text-sm font-semibold text-slate-200">Proceed to Financial Analysis</div>
+          </div>
+          <button id="btn-ai-analysis" disabled class="px-5 py-2.5 bg-brand-600/10 hover:bg-brand-600/20 disabled:bg-slate-800/30 text-brand-300 disabled:text-slate-600 font-semibold text-sm rounded-lg border border-brand-500/20 disabled:border-slate-700/50 transition-all disabled:cursor-not-allowed flex items-center gap-2">
+            Launch AI Analyst
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Analysis & Diagnostics (Hidden by default) -->
+      <div id="analysis" class="hidden bg-navy-900/50 border border-navy-800/50 rounded-xl p-5 animate-fadeIn">
+        <div class="flex items-center gap-2 mb-4 pb-3 border-b border-navy-800/30">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-400">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Quick Analysis</h3>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-green-500/5 rounded-lg border border-green-500/10">
+              <div class="flex items-center gap-2">
+                <div class="p-2 bg-green-500/10 rounded-lg text-green-400">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                </div>
+                <span class="text-xs font-medium text-slate-400">Income</span>
+              </div>
+              <span id="stat-income" class="text-sm font-bold text-green-400">$0.00</span>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-red-500/5 rounded-lg border border-red-500/10">
+              <div class="flex items-center gap-2">
+                <div class="p-2 bg-red-500/10 rounded-lg text-red-400">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                </div>
+                <span class="text-xs font-medium text-slate-400">Expenses</span>
+              </div>
+              <span id="stat-expense" class="text-sm font-bold text-red-400">$0.00</span>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-slate-500/5 rounded-lg border border-slate-500/10">
+              <div class="flex items-center gap-2">
+                <div class="p-2 bg-slate-500/10 rounded-lg text-slate-400">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <span class="text-xs font-medium text-slate-400">Net Flow</span>
+              </div>
+              <span id="stat-net" class="text-sm font-bold text-slate-300">$0.00</span>
+            </div>
+          </div>
+          <div class="pl-4 border-l border-navy-800/50">
+            <div class="flex items-center gap-2 mb-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500">
+                <path d="M3 3v18h18"></path>
+                <path d="M18 17V9"></path>
+                <path d="M13 17V5"></path>
+                <path d="M8 17v-3"></path>
+              </svg>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Top Merchants</span>
+            </div>
+            <ul id="top-merchants" class="space-y-2 text-xs">
+              <li class="text-slate-600">Analysis will appear here</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div id="diagnostics" class="hidden bg-navy-900/50 border border-navy-800/50 rounded-xl p-5 animate-fadeIn">
+        <div class="flex items-center gap-2 mb-4 pb-3 border-b border-navy-800/30">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-400">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Legend / Diagnostics</h3>
+        </div>
+        <div id="diagnostics-content" class="text-xs text-slate-400 space-y-2 font-mono"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- AI Confirmation Modal -->
+  <div id="ai-confirm-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-navy-900 border border-navy-700 rounded-2xl shadow-2xl max-w-md w-full p-8 animate-scaleIn">
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-brand-400">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">Ready for AI Analysis?</h3>
+          <p class="text-sm text-slate-400">Please confirm before proceeding</p>
+        </div>
+      </div>
+      
+      <p class="text-sm text-slate-300 mb-6 leading-relaxed">
+        Are you sure you're ready for AI to see the information? This will share the sanitized data with the AI analyst for processing.
+      </p>
+      
+      <div class="flex gap-3">
+        <button id="btn-modal-cancel" class="flex-1 px-4 py-2.5 bg-navy-800 hover:bg-navy-700 text-slate-200 font-semibold rounded-lg transition-colors">
+          No, Go Back
+        </button>
+        <button id="btn-modal-confirm" class="flex-1 px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-lg transition-colors">
+          Yes, Continue
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #0f1419;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+  .animate-scaleIn {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  details[open] > summary {
+    border-bottom: 1px solid rgb(30 41 59 / 0.3);
+  }
+
+  #output:focus {
+    outline: none;
+  }
+
+  mark {
+    background-color: #fbbf24;
+    color: #1e293b;
+    padding: 2px 0;
+    border-radius: 2px;
+  }
+</style>
+
+<script src="../scripts/app.ts"></script>

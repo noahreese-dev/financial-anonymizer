@@ -1,0 +1,71 @@
+<div id="step-results" class="hidden w-full max-w-[380px] animate-fade-in">
+   <div class="bg-navy-900/50 backdrop-blur-md border border-navy-800 rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden ring-1 ring-white/5">
+      <!-- Background Glow -->
+      <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-brand-900/10 to-transparent pointer-events-none"></div>
+
+      <!-- Icon -->
+      <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-6 ring-1 ring-green-500/30 shadow-[0_0_20px_rgba(16,185,129,0.2)] animate-pulse-slow">
+         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path></svg>
+      </div>
+
+      <h2 class="text-2xl font-bold text-white mb-2">Ready for LLM Ingestion</h2>
+      <p class="text-slate-400 text-sm mb-8">Personally Identifiable Information (PII) has been successfully masked.</p>
+
+      <!-- Stats -->
+      <div class="w-full space-y-3 mb-8">
+         <div class="flex items-center justify-between p-4 bg-navy-950/50 rounded-xl border border-navy-800/50 hover:bg-navy-950/80 transition-colors">
+            <span class="text-slate-400 text-sm flex items-center gap-2">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+               Total Records
+            </span>
+            <span id="stat-total-records" class="text-white font-mono font-bold">0</span>
+         </div>
+         <div class="flex items-center justify-between p-4 bg-navy-950/50 rounded-xl border border-navy-800/50 hover:bg-navy-950/80 transition-colors">
+            <span class="text-slate-400 text-sm flex items-center gap-2">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+               PII Masked
+            </span>
+            <span id="stat-pii-masked" class="text-brand-400 font-mono font-bold">0</span>
+         </div>
+         <div class="flex items-center justify-between p-4 bg-navy-950/50 rounded-xl border border-navy-800/50 relative overflow-hidden group">
+             <div class="absolute inset-0 bg-green-500/5 group-hover:bg-green-500/10 transition-colors"></div>
+            <span class="text-slate-400 text-sm flex items-center gap-2 relative z-10">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
+               Safety Score
+            </span>
+            <span class="text-green-500 font-mono font-bold relative z-10">100%</span>
+         </div>
+      </div>
+
+      <!-- Main Action -->
+      <button id="btn-download-json" class="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg shadow-brand-600/20 transition-all mb-4 flex items-center justify-center gap-2 transform active:scale-95">
+         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+         Download Secure JSON
+      </button>
+
+      <!-- Secondary Links -->
+      <div class="flex items-center justify-center gap-4 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+         <button id="btn-download-csv" class="hover:text-slate-300 transition-colors">Download CSV</button>
+         <span class="text-navy-700">|</span>
+         <button id="btn-download-text" class="hover:text-slate-300 transition-colors">Download TXT</button>
+      </div>
+      
+      <div class="mt-8 pt-6 border-t border-navy-800/50 w-full">
+         <p class="text-[10px] text-navy-500 font-mono flex items-center justify-center gap-2">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            End-to-end encrypted • Link expires in 24h
+         </p>
+         <button id="btn-reset" class="mt-4 text-xs text-brand-500 hover:text-brand-400 transition-colors flex items-center justify-center gap-1 mx-auto py-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Process Another File
+         </button>
+      </div>
+   </div>
+   
+   <div class="mt-6 text-center">
+      <button class="text-xs text-slate-600 hover:text-slate-400 transition-colors border-b border-dashed border-slate-700 pb-0.5">
+         View Sample Payload
+      </button>
+   </div>
+</div>
+
