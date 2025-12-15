@@ -206,8 +206,6 @@ function renderOutput(highlightTerm?: string) {
   const filenameEl = $('output-filename');
   const outputNote = $('output-note');
   const btnSearchOpen = $('btn-search-open') as HTMLButtonElement | null;
-  const compareBtn = $('btn-compare') as HTMLButtonElement | null;
-  const highlightBtn = $('btn-highlight-changes') as HTMLButtonElement | null;
 
   if (!outputEl || !outputContainer || !emptyEl || !filenameEl) return;
 
@@ -219,8 +217,6 @@ function renderOutput(highlightTerm?: string) {
     downloadBtn && (downloadBtn.disabled = true);
     aiBtn && (aiBtn.disabled = true);
     btnSearchOpen && (btnSearchOpen.disabled = true);
-    compareBtn && (compareBtn.disabled = true);
-    highlightBtn && (highlightBtn.disabled = true);
     outputNote?.classList.add('hidden');
     
     // Deep Clean button - disabled when no output
@@ -266,8 +262,6 @@ function renderOutput(highlightTerm?: string) {
   downloadBtn && (downloadBtn.disabled = !out);
   aiBtn && (aiBtn.disabled = !out);
   btnSearchOpen && (btnSearchOpen.disabled = !out);
-  compareBtn && (compareBtn.disabled = !out);
-  highlightBtn && (highlightBtn.disabled = !out);
   
   // Deep Clean button (Presidio) - enable when we have output
   const deepCleanBtn = $('btn-deep-clean') as HTMLButtonElement | null;
@@ -924,8 +918,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Search & Destroy Logic
   const btnSearchOpen = $('btn-search-open') as HTMLButtonElement | null;
-  const btnCompare = $('btn-compare') as HTMLButtonElement | null;
-  const btnHighlightChanges = $('btn-highlight-changes') as HTMLButtonElement | null;
   const outputCompareWrap = $('output-compare-wrap');
   const outputOriginalPane = $('output-original-pane');
   const outputOriginalEl = $('output-original');
@@ -988,20 +980,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else outputOriginalEl.textContent = latestSourceText || '';
   };
 
-  btnCompare?.addEventListener('click', () => {
-    compareMode = !compareMode;
-    try { localStorage.setItem('fa:compare', compareMode ? 'true' : 'false'); } catch { /* ignore */ }
-    applyCompareLayout();
-    renderOriginalPane();
-  });
-
-  btnHighlightChanges?.addEventListener('click', () => {
-    highlightChanges = !highlightChanges;
-    try { localStorage.setItem('fa:highlightChanges', highlightChanges ? 'true' : 'false'); } catch { /* ignore */ }
-    renderOriginalPane();
-  });
-
-  // Restore compare/highlight toggles
+  // Restore compare/highlight toggles (legacy, kept for potential future use)
   try {
     compareMode = localStorage.getItem('fa:compare') === 'true';
     highlightChanges = localStorage.getItem('fa:highlightChanges') === 'true';
