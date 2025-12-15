@@ -264,9 +264,14 @@ function renderOutput(highlightTerm?: string) {
     finalOutput = finalOutput
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
+      .replace(/>/g, '&gt;');
+    
+    // Highlight both bracketed [PHONE] and unbracketed Phone/Email/etc. PII placeholders
+    finalOutput = finalOutput
       .replace(/\[(PHONE|EMAIL|SSN|NAME|ADDRESS|CARD|ZIP|URL|ID|REF|MEMO)\]/gi, 
-        '<mark class="bg-yellow-500/40 text-yellow-200 px-0.5 rounded">[$1]</mark>');
+        '<mark class="bg-yellow-500/40 text-yellow-200 px-0.5 rounded">[$1]</mark>')
+      .replace(/\b(Phone|Email|SSN|Card|Address|Zip|URL)\b/g, 
+        '<mark class="bg-yellow-500/40 text-yellow-200 px-0.5 rounded">$1</mark>');
   }
   
   // If highlighted (search or PII), use innerHTML. If not, textContent is safer.
@@ -996,15 +1001,10 @@ document.addEventListener('DOMContentLoaded', () => {
     else outputOriginalEl.textContent = latestSourceText || '';
   };
 
-  // Restore compare/highlight toggles (legacy, kept for potential future use)
-  try {
-    compareMode = localStorage.getItem('fa:compare') === 'true';
-    highlightChanges = localStorage.getItem('fa:highlightChanges') === 'true';
-  } catch {
-    // ignore
-  }
+  // Compare mode is disabled (feature removed) - always force false
+  compareMode = false;
+  try { localStorage.removeItem('fa:compare'); } catch { /* ignore */ }
   applyCompareLayout();
-  renderOriginalPane();
 
   // Highlight button - toggles PII highlighting in the OUTPUT
   const btnHighlightChanges = $('btn-highlight-changes') as HTMLButtonElement | null;
