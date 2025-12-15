@@ -334,11 +334,11 @@ function setActiveFormat(fmt: OutputFormat) {
   document.querySelectorAll('.format-tab').forEach(b => {
     const isFmt = b.getAttribute('data-format') === fmt;
     if (isFmt) {
-      b.classList.remove('text-slate-400', 'text-slate-500', 'hover:text-slate-300', 'hover:bg-navy-900/50');
-      b.classList.add('bg-brand-600/20', 'text-brand-300', 'border', 'border-brand-500/30');
+      b.classList.remove('text-slate-400', 'hover:text-white', 'hover:bg-white/5');
+      b.classList.add('bg-white/10', 'text-white', 'shadow-sm');
     } else {
-      b.classList.add('text-slate-500', 'hover:text-slate-300', 'hover:bg-navy-900/50');
-      b.classList.remove('bg-brand-600/20', 'text-brand-300', 'border', 'border-brand-500/30');
+      b.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-white/5');
+      b.classList.remove('bg-white/10', 'text-white', 'shadow-sm');
     }
   });
   renderOutput();
@@ -1001,11 +1001,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderOriginalPane();
     // Visual feedback - toggle active state
     if (highlightChanges) {
-      btnHighlightChanges.classList.add('bg-brand-600/20', 'text-brand-300');
-      btnHighlightChanges.classList.remove('text-slate-400');
+      btnHighlightChanges.classList.add('bg-white/10', 'text-white');
+      btnHighlightChanges.classList.remove('text-slate-500');
     } else {
-      btnHighlightChanges.classList.remove('bg-brand-600/20', 'text-brand-300');
-      btnHighlightChanges.classList.add('text-slate-400');
+      btnHighlightChanges.classList.remove('bg-white/10', 'text-white');
+      btnHighlightChanges.classList.add('text-slate-500');
     }
   });
 
