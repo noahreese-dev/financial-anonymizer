@@ -206,6 +206,7 @@ function renderOutput(highlightTerm?: string) {
   const filenameEl = $('output-filename');
   const outputNote = $('output-note');
   const btnSearchOpen = $('btn-search-open') as HTMLButtonElement | null;
+  const highlightBtn = $('btn-highlight-changes') as HTMLButtonElement | null;
 
   if (!outputEl || !outputContainer || !emptyEl || !filenameEl) return;
 
@@ -217,6 +218,7 @@ function renderOutput(highlightTerm?: string) {
     downloadBtn && (downloadBtn.disabled = true);
     aiBtn && (aiBtn.disabled = true);
     btnSearchOpen && (btnSearchOpen.disabled = true);
+    highlightBtn && (highlightBtn.disabled = true);
     outputNote?.classList.add('hidden');
     
     // Deep Clean button - disabled when no output
@@ -262,6 +264,7 @@ function renderOutput(highlightTerm?: string) {
   downloadBtn && (downloadBtn.disabled = !out);
   aiBtn && (aiBtn.disabled = !out);
   btnSearchOpen && (btnSearchOpen.disabled = !out);
+  highlightBtn && (highlightBtn.disabled = !out);
   
   // Deep Clean button (Presidio) - enable when we have output
   const deepCleanBtn = $('btn-deep-clean') as HTMLButtonElement | null;
@@ -989,6 +992,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   applyCompareLayout();
   renderOriginalPane();
+
+  // Highlight button (toggles PII highlighting in source view)
+  const btnHighlightChanges = $('btn-highlight-changes') as HTMLButtonElement | null;
+  btnHighlightChanges?.addEventListener('click', () => {
+    highlightChanges = !highlightChanges;
+    try { localStorage.setItem('fa:highlightChanges', highlightChanges ? 'true' : 'false'); } catch { /* ignore */ }
+    renderOriginalPane();
+    // Visual feedback - toggle active state
+    if (highlightChanges) {
+      btnHighlightChanges.classList.add('bg-brand-600/20', 'text-brand-300');
+      btnHighlightChanges.classList.remove('text-slate-400');
+    } else {
+      btnHighlightChanges.classList.remove('bg-brand-600/20', 'text-brand-300');
+      btnHighlightChanges.classList.add('text-slate-400');
+    }
+  });
 
   function openSearch() {
     console.log('openSearch called', { outputJSON: !!outputJSON, defaultHeader: !!defaultHeader, searchBar: !!searchBar });
