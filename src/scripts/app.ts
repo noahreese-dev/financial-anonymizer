@@ -1072,6 +1072,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Findings info tooltip (show/hide on click)
+  const findingsInfoBtn = $('findings-info-btn');
+  const findingsTooltip = $('findings-tooltip');
+  
+  findingsInfoBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    findingsTooltip?.classList.toggle('hidden');
+  });
+  
+  // Close tooltip when clicking elsewhere
+  document.addEventListener('click', (e) => {
+    if (!findingsInfoBtn?.contains(e.target as Node)) {
+      findingsTooltip?.classList.add('hidden');
+    }
+  });
+
   // Share-safety items (failed checks) → open search with a helpful seed term
   const shareSafetyItems = $('share-safety-items');
   shareSafetyItems?.addEventListener('click', (e) => {
@@ -1284,20 +1300,37 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Known PII placeholder terms (without brackets)
+    const piiTerms = ['PHONE', 'EMAIL', 'SSN', 'URL', 'ADDRESS', 'ZIP', 'CARD', 'LOC', 'NAME'];
+    const upperTerm = term.toUpperCase();
+    const isPiiTerm = piiTerms.includes(upperTerm);
+
     // Add to custom terms (case-insensitive check)
-    const lower = term.toLowerCase();
     const existing = new Set(customRemoveTerms.map(t => t.toLowerCase()));
     
     console.log('Current custom terms:', customRemoveTerms);
-    console.log('Term already exists?', existing.has(lower));
-    
-    if (!existing.has(lower)) {
-      customRemoveTerms.unshift(term);
-      if (customRemoveTerms.length > 50) customRemoveTerms = customRemoveTerms.slice(0, 50);
-      saveCustomTerms();
-      renderCustomTerms();
-      console.log('Term added to custom terms:', customRemoveTerms);
+    console.log('Is PII term?', isPiiTerm);
+
+    // For PII terms, add the BRACKETED version (e.g., [URL]) so it matches the placeholder
+    const termsToAdd: string[] = [];
+    if (isPiiTerm) {
+      const bracketed = `[${upperTerm}]`;
+      if (!existing.has(bracketed.toLowerCase())) {
+        termsToAdd.push(bracketed);
+      }
     }
+    // Also add the plain term for non-PII or edge cases
+    if (!existing.has(term.toLowerCase()) && !isPiiTerm) {
+      termsToAdd.push(term);
+    }
+
+    for (const t of termsToAdd) {
+      customRemoveTerms.unshift(t);
+    }
+    if (customRemoveTerms.length > 50) customRemoveTerms = customRemoveTerms.slice(0, 50);
+    saveCustomTerms();
+    renderCustomTerms();
+    console.log('Terms added to custom terms:', termsToAdd, 'Full list:', customRemoveTerms);
 
     // Always Clear search & Reprocess
     console.log('Closing search and reprocessing...');

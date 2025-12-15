@@ -1149,6 +1149,10 @@ export class FinancialAnonymizer {
       const b7 = clean;
       clean = clean.replace(PATTERNS.PII_ZIP, '[ZIP]');
       if (report && clean !== b7) report.redactions.zip = (report.redactions.zip || 0) + 1;
+
+      // 1b. Run custom removals AGAIN to catch bracketed placeholders (e.g., [URL], [PHONE])
+      // This allows users to delete PII placeholders via "Delete All"
+      clean = this.applyCustomRemovals(clean, report);
     }
 
     // 2. Remove Transaction IDs / Refs

@@ -257,13 +257,37 @@ import Layout from '../layouts/Layout.astro';
         <!-- Cleanup Report Bar (appears after processing) -->
         <div id="findings-bar" class="hidden flex-shrink-0 px-4 sm:px-6 pb-3">
           <div class="flex items-center gap-3 p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/5 rounded-xl border border-green-500/20">
+            <!-- Label + Info -->
             <div class="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400 flex-shrink-0">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
-              <div class="text-[11px] font-semibold text-green-300 uppercase tracking-wide">Cleaned</div>
+              <div class="text-[11px] font-semibold text-green-300 uppercase tracking-wide whitespace-nowrap">Removed</div>
+              <!-- Info tooltip -->
+              <button id="findings-info-btn" type="button" class="relative group" title="What do these mean?">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 hover:text-slate-300 transition-colors">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <!-- Tooltip popup (hidden by default, shown on hover/click) -->
+                <div id="findings-tooltip" class="hidden absolute left-0 bottom-full mb-2 w-56 p-3 bg-navy-900 border border-navy-700 rounded-lg shadow-xl text-left z-50">
+                  <div class="text-[11px] text-slate-300 space-y-2">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-red-400"></span>
+                      <span><strong class="text-red-300">Red</strong> = Sensitive PII removed</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                      <span><strong class="text-green-300">Green</strong> = Cleanup applied</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 pt-1 border-t border-navy-700">Click any chip to find & remove more.</div>
+                  </div>
+                </div>
+              </button>
             </div>
+            <!-- Chips: Red = PII, Green = cleanup -->
             <div id="findings-chips" class="flex flex-wrap items-center gap-1.5"></div>
           </div>
         </div>
