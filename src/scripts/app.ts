@@ -1786,6 +1786,22 @@ document.addEventListener('DOMContentLoaded', () => {
   btnDeepClean?.addEventListener('click', runDeepClean);
   btnDeepCleanApply?.addEventListener('click', applyDeepCleanResults);
   btnDeepCleanCancel?.addEventListener('click', closeDeepCleanModal);
+
+  // Deep Clean info tooltip
+  const btnDeepCleanInfo = $('btn-deep-clean-info');
+  const deepCleanInfoTooltip = $('deep-clean-info-tooltip');
+
+  btnDeepCleanInfo?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deepCleanInfoTooltip?.classList.toggle('hidden');
+  });
+
+  // Close tooltip when clicking elsewhere
+  document.addEventListener('click', (e) => {
+    if (!btnDeepCleanInfo?.contains(e.target as Node) && !deepCleanInfoTooltip?.contains(e.target as Node)) {
+      deepCleanInfoTooltip?.classList.add('hidden');
+    }
+  });
   
   // Close on backdrop click
   deepCleanModal?.addEventListener('click', (e) => {
