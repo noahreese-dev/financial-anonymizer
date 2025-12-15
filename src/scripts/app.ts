@@ -255,9 +255,22 @@ function renderOutput(highlightTerm?: string) {
   emptyEl.classList.add('hidden');
   outputContainer.classList.remove('hidden');
   
-  // If highlighted, use innerHTML. If not, textContent is safer (but formatData is safe now).
-  // formatData escapes HTML entities if highlightTerm is present.
-  if (highlightTerm) outputEl.innerHTML = out;
+  // Check if PII highlighting is enabled (global flag)
+  let finalOutput = out;
+  const shouldHighlightPII = (window as any).__highlightChanges === true;
+  
+  if (shouldHighlightPII) {
+    // Escape HTML first for safety, then add highlight marks
+    finalOutput = finalOutput
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\[(PHONE|EMAIL|SSN|NAME|ADDRESS|CARD|ZIP|URL|ID|REF|MEMO)\]/gi, 
+        '<mark class="bg-yellow-500/40 text-yellow-200 px-0.5 rounded">[$1]</mark>');
+  }
+  
+  // If highlighted (search or PII), use innerHTML. If not, textContent is safer.
+  if (highlightTerm || shouldHighlightPII) outputEl.innerHTML = finalOutput;
   else outputEl.textContent = out;
   
   copyBtn && (copyBtn.disabled = !out);
@@ -993,12 +1006,29 @@ document.addEventListener('DOMContentLoaded', () => {
   applyCompareLayout();
   renderOriginalPane();
 
-  // Highlight button (toggles PII highlighting in source view)
+  // Highlight button - toggles PII highlighting in the OUTPUT
   const btnHighlightChanges = $('btn-highlight-changes') as HTMLButtonElement | null;
+  
+  // Initialize global flag from localStorage
+  try {
+    highlightChanges = localStorage.getItem('fa:highlightChanges') === 'true';
+    (window as any).__highlightChanges = highlightChanges;
+  } catch { /* ignore */ }
+  
+  // Apply initial visual state if highlight is on
+  if (highlightChanges && btnHighlightChanges) {
+    btnHighlightChanges.classList.add('bg-white/10', 'text-white');
+    btnHighlightChanges.classList.remove('text-slate-500');
+  }
+  
   btnHighlightChanges?.addEventListener('click', () => {
     highlightChanges = !highlightChanges;
+    (window as any).__highlightChanges = highlightChanges;
     try { localStorage.setItem('fa:highlightChanges', highlightChanges ? 'true' : 'false'); } catch { /* ignore */ }
-    renderOriginalPane();
+    
+    // Re-render output with/without highlights
+    renderOutput();
+    
     // Visual feedback - toggle active state
     if (highlightChanges) {
       btnHighlightChanges.classList.add('bg-white/10', 'text-white');
@@ -1358,17 +1388,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const iconCheck = btnCopy.querySelector('.check-icon');
       const textSpan = btnCopy.querySelector('.btn-text');
       
-      if (iconCopy && iconCheck && textSpan) {
-         iconCopy.classList.add('hidden');
-         iconCheck.classList.remove('hidden');
-         textSpan.textContent = 'Copied!';
-         
-         setTimeout(() => {
-           iconCopy.classList.remove('hidden');
-           iconCheck.classList.add('hidden');
-           textSpan.textContent = 'Copy';
-         }, 2000);
-      }
+      // Hide copy icon, show check icon
+      iconCopy?.classList.add('hidden');
+      iconCheck?.classList.remove('hidden');
+      if (textSpan) textSpan.textContent = 'Copied!';
+      
+      // Flash the button green
+      btnCopy.classList.add('text-green-400');
+      
+      setTimeout(() => {
+        iconCopy?.classList.remove('hidden');
+        iconCheck?.classList.add('hidden');
+        if (textSpan) textSpan.textContent = 'Copy';
+        btnCopy.classList.remove('text-green-400');
+      }, 2000);
     } catch {
       // fall back silently
     }
