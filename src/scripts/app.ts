@@ -96,8 +96,8 @@ function renderFindingsBar() {
   addPII('Loc', 'location' as any, 'LOC');
 
   if ((rep.idTokensRemoved ?? 0) > 0) items.push({ label: 'IDs', count: rep.idTokensRemoved, tone: 'neutral' });
-  if ((rep.merchantNormalized ?? 0) > 0) items.push({ label: 'Normalized', count: rep.merchantNormalized, tone: 'good' });
-  if ((rep.customRemoved ?? 0) > 0) items.push({ label: 'Custom', count: rep.customRemoved, tone: 'good' });
+  if ((rep.merchantNormalized ?? 0) > 0) items.push({ label: 'Merchants', count: rep.merchantNormalized, tone: 'good' });
+  if ((rep.customRemoved ?? 0) > 0) items.push({ label: 'Your Terms', count: rep.customRemoved, tone: 'good' });
 
   // Render as compact chips. PII chips are clickable (data-find) to jump via search.
   const html = items.map((it) => {
@@ -490,11 +490,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const wfStep1 = $('wf-step-1');
   const wfStep2 = $('wf-step-2');
   const wfStep3 = $('wf-step-3');
+  const wfConn1 = $('wf-conn-1');
+  const wfConn2 = $('wf-conn-2');
+
   function setWorkflowStep(step: 1 | 2 | 3) {
     const steps = [
-      { el: wfStep1, idx: 1 },
-      { el: wfStep2, idx: 2 },
-      { el: wfStep3, idx: 3 },
+      { el: wfStep1, idx: 1, connAfter: wfConn1 },
+      { el: wfStep2, idx: 2, connAfter: wfConn2 },
+      { el: wfStep3, idx: 3, connAfter: null },
     ] as const;
 
     for (const s of steps) {
@@ -502,17 +505,68 @@ document.addEventListener('DOMContentLoaded', () => {
       const isActive = s.idx === step;
       const isDone = s.idx < step;
 
-      s.el.classList.toggle('opacity-60', !isActive && !isDone);
-      s.el.classList.toggle('opacity-70', !isActive && isDone === false);
-      s.el.classList.toggle('opacity-100', isActive || isDone);
+      const dot = s.el.querySelector('.wf-dot') as HTMLElement | null;
+      const numEl = s.el.querySelector('.wf-num') as HTMLElement | null;
+      const checkEl = s.el.querySelector('.wf-check') as HTMLElement | null;
+      const labelEl = s.el.querySelector('.wf-label') as HTMLElement | null;
 
-      // Active emphasis
-      s.el.classList.toggle('bg-navy-950/40', isActive);
-      s.el.classList.toggle('bg-navy-950/20', !isActive);
+      // Opacity: done/active = full, upcoming = dim
+      s.el.classList.remove('opacity-60', 'opacity-70', 'opacity-100');
+      s.el.classList.add(isActive || isDone ? 'opacity-100' : 'opacity-50');
 
-      // Border emphasis
-      s.el.classList.toggle('border-brand-500/30', isActive);
-      s.el.classList.toggle('border-navy-800/60', !isActive);
+      // Background and border
+      s.el.classList.remove('bg-navy-950/40', 'bg-navy-950/20', 'border-brand-500/40', 'border-green-500/40', 'border-navy-800/60');
+      if (isActive) {
+        s.el.classList.add('bg-navy-950/40', 'border-brand-500/40');
+      } else if (isDone) {
+        s.el.classList.add('bg-green-500/10', 'border-green-500/30');
+      } else {
+        s.el.classList.add('bg-navy-950/20', 'border-navy-800/60');
+      }
+
+      // Dot styling: green for done, brand for active, gray for upcoming
+      if (dot) {
+        dot.classList.remove('bg-green-500/30', 'border-green-500/50', 'bg-brand-500/30', 'border-brand-500/50', 'bg-navy-800/50', 'bg-navy-800/70', 'border-navy-700/50', 'border-navy-700/60');
+        if (isDone) {
+          dot.classList.add('bg-green-500/30', 'border-green-500/50');
+        } else if (isActive) {
+          dot.classList.add('bg-brand-500/30', 'border-brand-500/50');
+        } else {
+          dot.classList.add('bg-navy-800/50', 'border-navy-700/50');
+        }
+      }
+
+      // Show checkmark for done steps, number otherwise
+      if (isDone) {
+        numEl?.classList.add('hidden');
+        checkEl?.classList.remove('hidden');
+      } else {
+        numEl?.classList.remove('hidden');
+        checkEl?.classList.add('hidden');
+        // Color the number based on state
+        if (numEl) {
+          numEl.classList.remove('text-slate-300', 'text-slate-400', 'text-slate-500', 'text-brand-300');
+          numEl.classList.add(isActive ? 'text-brand-300' : 'text-slate-500');
+        }
+      }
+
+      // Label color
+      if (labelEl) {
+        labelEl.classList.remove('text-slate-200', 'text-slate-300', 'text-slate-400', 'text-green-300', 'text-brand-300');
+        if (isDone) {
+          labelEl.classList.add('text-green-300');
+        } else if (isActive) {
+          labelEl.classList.add('text-brand-300');
+        } else {
+          labelEl.classList.add('text-slate-400');
+        }
+      }
+
+      // Connector line color (green if step before is done)
+      if (s.connAfter) {
+        s.connAfter.classList.remove('bg-navy-800/70', 'bg-navy-800/60', 'bg-green-500/50');
+        s.connAfter.classList.add(isDone ? 'bg-green-500/50' : 'bg-navy-800/60');
+      }
     }
   }
 
