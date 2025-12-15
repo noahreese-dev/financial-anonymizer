@@ -362,51 +362,79 @@ import Layout from '../layouts/Layout.astro';
               <!-- Divider -->
               <div class="w-px h-5 bg-navy-700/50 mx-0.5 sm:mx-1.5"></div>
 
-              <!-- Deep Clean (special, prominent) with info tooltip -->
-              <div class="relative flex items-center">
-                <button id="btn-deep-clean" disabled class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 hover:text-purple-200 rounded-lg rounded-r-none border border-purple-500/25 hover:border-purple-500/40 border-r-0 transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="AI-powered deep scan (runs locally)">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                  </svg>
-                  <span id="deep-clean-text" class="hidden sm:inline">Deep Clean</span>
-                </button>
-                <!-- Info button -->
-                <button id="btn-deep-clean-info" type="button" class="px-1.5 py-1.5 text-purple-400 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg rounded-l-none border border-purple-500/25 hover:border-purple-500/40 border-l-0 transition-all" title="Learn more about Deep Clean">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                  </svg>
-                </button>
+              <!-- Deep Clean (unified button with info section) -->
+              <div class="relative">
+                <div class="flex items-center bg-purple-500/15 rounded-lg border border-purple-500/25 overflow-hidden transition-all hover:bg-purple-500/20 hover:border-purple-500/40 disabled:opacity-30">
+                  <button id="btn-deep-clean" disabled class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-purple-300 hover:text-purple-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Advanced PII detection (runs locally)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                    <span id="deep-clean-text" class="hidden sm:inline">Deep Clean</span>
+                  </button>
+                  <!-- Divider line -->
+                  <div class="w-px h-4 bg-purple-500/30"></div>
+                  <!-- Info button (part of same visual unit) -->
+                  <button id="btn-deep-clean-info" type="button" class="px-1.5 py-1.5 text-purple-400 hover:text-purple-200 transition-all" title="Learn more">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                  </button>
+                </div>
                 <!-- Info tooltip (shown on click) -->
-                <div id="deep-clean-info-tooltip" class="hidden absolute right-0 top-full mt-2 w-72 p-4 bg-navy-900 border border-navy-700 rounded-xl shadow-2xl text-left z-50">
-                  <div class="text-xs text-slate-300 space-y-3">
-                    <div class="flex items-center gap-2 text-purple-300 font-semibold">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div id="deep-clean-info-tooltip" class="hidden absolute right-0 top-full mt-2 w-80 p-4 bg-navy-900 border border-navy-700 rounded-xl shadow-2xl text-left z-50">
+                  <div class="text-xs text-slate-300 space-y-4">
+                    <!-- Header -->
+                    <div class="flex items-center gap-2 text-purple-300 font-semibold text-sm">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                       </svg>
-                      <span>100% Private & Secure</span>
+                      <span>Deep Clean — 100% Private</span>
                     </div>
-                    <div class="space-y-2 text-[11px] text-slate-400">
-                      <div class="flex items-start gap-2">
-                        <span class="text-green-400 mt-0.5">✓</span>
-                        <span><strong class="text-slate-300">Local Processing</strong> — Data never leaves your machine. Everything runs on your device.</span>
-                      </div>
-                      <div class="flex items-start gap-2">
-                        <span class="text-green-400 mt-0.5">✓</span>
-                        <span><strong class="text-slate-300">Open Source</strong> — Uses <a href="https://microsoft.github.io/presidio/" target="_blank" class="text-purple-300 hover:underline">Microsoft Presidio</a>, an open-source PII detection library.</span>
-                      </div>
-                      <div class="flex items-start gap-2">
-                        <span class="text-green-400 mt-0.5">✓</span>
-                        <span><strong class="text-slate-300">Containerized</strong> — Runs inside Docker, fully isolated from your system. No network access.</span>
-                      </div>
-                      <div class="flex items-start gap-2">
-                        <span class="text-green-400 mt-0.5">✓</span>
-                        <span><strong class="text-slate-300">Ephemeral</strong> — No data is stored. Container is stateless and memory-only.</span>
+                    
+                    <!-- Optional notice -->
+                    <div class="p-2.5 bg-navy-800/50 rounded-lg border border-navy-700/50">
+                      <div class="text-[11px] text-slate-400">
+                        <strong class="text-slate-300">This is completely optional.</strong> The standard anonymization (without Deep Clean) works great for most cases. Deep Clean is an extra layer for users who want maximum PII detection.
                       </div>
                     </div>
-                    <div class="text-[10px] text-slate-500 pt-2 border-t border-navy-700">
-                      Deep Clean uses advanced NLP to find PII that simple pattern matching might miss.
+                    
+                    <!-- Security features -->
+                    <div class="space-y-2.5 text-[11px] text-slate-400">
+                      <div class="flex items-start gap-2">
+                        <span class="text-green-400 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong class="text-slate-300">100% Local</strong> — All processing happens on your machine. Your data never touches the internet or any external server.</span>
+                      </div>
+                      <div class="flex items-start gap-2">
+                        <span class="text-green-400 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong class="text-slate-300">Open Source Technology</strong> — Powered by <a href="https://microsoft.github.io/presidio/" target="_blank" class="text-purple-300 hover:underline">Presidio</a>, a battle-tested open-source PII detection engine used by enterprises worldwide. You can inspect every line of code.</span>
+                      </div>
+                      <div class="flex items-start gap-2">
+                        <span class="text-green-400 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong class="text-slate-300">Docker Containerized</strong> — Runs in a completely isolated container with no network access. The container cannot reach the internet or access your files.</span>
+                      </div>
+                      <div class="flex items-start gap-2">
+                        <span class="text-green-400 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong class="text-slate-300">Stateless & Ephemeral</strong> — No data is ever saved. The container is memory-only and discards everything when done. Nothing persists.</span>
+                      </div>
+                      <div class="flex items-start gap-2">
+                        <span class="text-green-400 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong class="text-slate-300">Advanced NLP Detection</strong> — Uses Named Entity Recognition to find PII that simple regex patterns miss: unusual name formats, context-dependent info, edge cases.</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Why Presidio -->
+                    <div class="pt-3 border-t border-navy-700">
+                      <div class="text-[10px] text-slate-500 space-y-1.5">
+                        <div class="font-semibold text-slate-400">Why Presidio?</div>
+                        <div>Presidio is trusted by Fortune 500 companies for production PII handling. It combines rule-based detection with machine learning NER models, supporting 50+ entity types across multiple languages. Fully auditable, no API keys, no cloud dependency.</div>
+                      </div>
+                    </div>
+                    
+                    <!-- Bottom note -->
+                    <div class="text-[10px] text-slate-600 pt-2 border-t border-navy-800">
+                      You can always skip this and use only the static anonymization — no AI involved.
                     </div>
                   </div>
                 </div>
