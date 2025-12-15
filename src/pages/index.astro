@@ -306,6 +306,21 @@ import Layout from '../layouts/Layout.astro';
 
               <div class="w-px h-5 bg-navy-700/50 mx-1"></div>
 
+              <!-- Deep Clean with AI (Presidio) - only activates on click -->
+              <button id="btn-deep-clean" disabled class="px-3 py-1.5 text-xs font-semibold bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-purple-200 rounded-lg border border-purple-500/30 hover:border-purple-500/50 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:border-purple-500/10 flex items-center gap-2" title="AI-powered deep scan (runs locally in Docker)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"></path>
+                  <path d="M8.25 9.93A4 4 0 0 1 12 2"></path>
+                  <path d="M12 12v10"></path>
+                  <path d="m4.93 15.5 2.83-2.83"></path>
+                  <path d="m16.24 12.67 2.83 2.83"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span id="deep-clean-text" class="hidden sm:inline">Deep Clean</span>
+              </button>
+
+              <div class="w-px h-5 bg-navy-700/50 mx-1 hidden sm:block"></div>
+
               <button id="btn-search-open" disabled class="px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-navy-800/50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="11" cy="11" r="8"></circle>
@@ -529,6 +544,45 @@ import Layout from '../layouts/Layout.astro';
           Yes, Continue
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Deep Clean Results Modal -->
+  <div id="deep-clean-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-navy-900 border border-purple-700/50 rounded-2xl shadow-2xl max-w-md w-full p-8 animate-scaleIn">
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-purple-400">
+            <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"></path>
+            <path d="M8.25 9.93A4 4 0 0 1 12 2"></path>
+            <path d="M12 12v10"></path>
+            <path d="m4.93 15.5 2.83-2.83"></path>
+            <path d="m16.24 12.67 2.83 2.83"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">Deep Clean Complete</h3>
+          <p class="text-sm text-slate-400">AI-powered scan results</p>
+        </div>
+      </div>
+      
+      <div id="deep-clean-findings" class="space-y-2 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
+        <!-- Findings rendered by JS -->
+      </div>
+      
+      <div class="flex gap-3">
+        <button id="btn-deep-clean-cancel" class="flex-1 px-4 py-2.5 bg-navy-800 hover:bg-navy-700 text-slate-200 font-semibold rounded-lg transition-colors border border-navy-700">
+          Keep Original
+        </button>
+        <button id="btn-deep-clean-apply" class="flex-1 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors">
+          Apply Changes
+        </button>
+      </div>
+      
+      <p class="text-[10px] text-slate-500 mt-4 text-center">
+        Powered by Microsoft Presidio • Running locally in Docker
+      </p>
     </div>
   </div>
 </Layout>

@@ -223,6 +223,10 @@ function renderOutput(highlightTerm?: string) {
     highlightBtn && (highlightBtn.disabled = true);
     outputNote?.classList.add('hidden');
     
+    // Deep Clean button - disabled when no output
+    const deepCleanBtn = $('btn-deep-clean') as HTMLButtonElement | null;
+    if (deepCleanBtn) deepCleanBtn.disabled = true;
+    
     // Stats reset
     const statIncome = $('stat-income');
     const statExpense = $('stat-expense');
@@ -264,6 +268,10 @@ function renderOutput(highlightTerm?: string) {
   btnSearchOpen && (btnSearchOpen.disabled = !out);
   compareBtn && (compareBtn.disabled = !out);
   highlightBtn && (highlightBtn.disabled = !out);
+  
+  // Deep Clean button (Presidio) - enable when we have output
+  const deepCleanBtn = $('btn-deep-clean') as HTMLButtonElement | null;
+  if (deepCleanBtn) deepCleanBtn.disabled = !out;
 
   const ext =
     activeFormat === 'markdown' || activeFormat === 'storyline'
@@ -1465,5 +1473,185 @@ document.addEventListener('DOMContentLoaded', () => {
   setActiveFormat('markdown');
   renderOutput();
   renderPlannedRemovals(null);
+
+  // ============================================================================
+  // DEEP CLEAN WITH PRESIDIO (isolated Docker container)
+  // Only activates when user explicitly clicks the button
+  // ============================================================================
+  
+  const PRESIDIO_API = 'http://127.0.0.1:8000';
+  let deepCleanResult: { transactions: any[]; findings: Record<string, number>; total_found: number } | null = null;
+  
+  const btnDeepClean = $('btn-deep-clean') as HTMLButtonElement | null;
+  const deepCleanText = $('deep-clean-text');
+  const deepCleanModal = $('deep-clean-modal');
+  const deepCleanFindings = $('deep-clean-findings');
+  const btnDeepCleanApply = $('btn-deep-clean-apply');
+  const btnDeepCleanCancel = $('btn-deep-clean-cancel');
+  
+  async function runDeepClean() {
+    if (!outputJSON || !outputJSON.transactions.length) {
+      console.log('No data to deep clean');
+      return;
+    }
+    
+    // Disable button and show loading state
+    if (btnDeepClean) btnDeepClean.disabled = true;
+    if (deepCleanText) deepCleanText.textContent = 'Scanning...';
+    
+    try {
+      console.log('Sending data to Presidio for deep clean...');
+      
+      const response = await fetch(`${PRESIDIO_API}/deep-clean`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactions: outputJSON.transactions.map(t => ({
+            date: t.date,
+            merchant: t.merchant,
+            description: t.description,
+            category: t.category,
+            amount: t.amount,
+            type: t.type
+          }))
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Presidio returned ${response.status}`);
+      }
+      
+      deepCleanResult = await response.json();
+      console.log('Deep clean result:', deepCleanResult);
+      
+      // Render findings in modal
+      if (deepCleanFindings && deepCleanResult) {
+        if (deepCleanResult.total_found === 0) {
+          deepCleanFindings.innerHTML = `
+            <div class="text-center py-6">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </div>
+              <div class="text-green-400 font-semibold">All Clear!</div>
+              <div class="text-sm text-slate-500 mt-1">No additional PII found by AI scan</div>
+            </div>
+          `;
+        } else {
+          deepCleanFindings.innerHTML = `
+            <div class="text-center mb-4">
+              <div class="text-2xl font-bold text-purple-300">${deepCleanResult.total_found}</div>
+              <div class="text-xs text-slate-400">additional items found</div>
+            </div>
+            ${Object.entries(deepCleanResult.findings)
+              .sort(([, a], [, b]) => b - a)
+              .map(([entity, count]) => `
+                <div class="flex items-center justify-between px-4 py-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                  <span class="text-purple-300 font-mono text-sm">${entity.replace(/_/g, ' ')}</span>
+                  <span class="text-purple-400 font-bold">${count}</span>
+                </div>
+              `).join('')}
+          `;
+        }
+      }
+      
+      // Show modal
+      deepCleanModal?.classList.remove('hidden');
+      
+    } catch (err: any) {
+      console.error('Deep clean error:', err);
+      
+      // Show error in modal
+      if (deepCleanFindings) {
+        deepCleanFindings.innerHTML = `
+          <div class="text-center py-6">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="text-red-400 font-semibold">Connection Failed</div>
+            <div class="text-sm text-slate-500 mt-1">Is Docker running?</div>
+            <code class="block mt-3 text-[10px] text-slate-600 bg-navy-950/50 p-2 rounded">docker-compose up -d</code>
+          </div>
+        `;
+      }
+      deepCleanModal?.classList.remove('hidden');
+    } finally {
+      // Re-enable button
+      if (btnDeepClean) btnDeepClean.disabled = !outputJSON;
+      if (deepCleanText) deepCleanText.textContent = 'Deep Clean';
+    }
+  }
+  
+  function applyDeepCleanResults() {
+    if (!deepCleanResult || !outputJSON) return;
+    
+    // Replace transactions with cleaned versions
+    outputJSON.transactions = deepCleanResult.transactions.map((t, i) => ({
+      ...outputJSON!.transactions[i],
+      merchant: t.merchant,
+      description: t.description
+    }));
+    
+    // Update removal report with Presidio findings
+    if (outputJSON.metadata.removalReport) {
+      const rep = outputJSON.metadata.removalReport;
+      for (const [entity, count] of Object.entries(deepCleanResult.findings)) {
+        const key = entity.toLowerCase().replace(/_/g, '');
+        rep.redactions[key] = (rep.redactions[key] || 0) + count;
+      }
+    }
+    
+    // Re-render output and findings bar
+    renderOutput();
+    renderFindingsBar();
+    renderShareSafety();
+    
+    // Close modal
+    deepCleanModal?.classList.add('hidden');
+    deepCleanResult = null;
+  }
+  
+  function closeDeepCleanModal() {
+    deepCleanModal?.classList.add('hidden');
+    deepCleanResult = null;
+  }
+  
+  // Event listeners
+  btnDeepClean?.addEventListener('click', runDeepClean);
+  btnDeepCleanApply?.addEventListener('click', applyDeepCleanResults);
+  btnDeepCleanCancel?.addEventListener('click', closeDeepCleanModal);
+  
+  // Close on backdrop click
+  deepCleanModal?.addEventListener('click', (e) => {
+    if (e.target === deepCleanModal) closeDeepCleanModal();
+  });
+  
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !deepCleanModal?.classList.contains('hidden')) {
+      closeDeepCleanModal();
+    }
+  });
+
+  // Enable Deep Clean button when we have output
+  // (added to renderOutput to keep it in sync)
+  const originalRenderOutput = renderOutput;
+  // Note: We hook into renderOutput completion via its existing flow
+  // The button will be enabled/disabled based on outputJSON state
+  
+  // Check if deep clean button should be enabled after any render
+  function updateDeepCleanButtonState() {
+    if (btnDeepClean) {
+      btnDeepClean.disabled = !outputJSON || isProcessing;
+    }
+  }
+  
+  // Call on initial load and after any processing
+  updateDeepCleanButtonState();
 });
 

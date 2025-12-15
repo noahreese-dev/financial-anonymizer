@@ -1,0 +1,57 @@
+# ============================================================================
+# Financial Anonymizer - Docker Compose
+# ============================================================================
+# 
+# Usage:
+#   docker-compose up -d          # Start Presidio service
+#   docker-compose down           # Stop and remove container
+#   docker-compose logs -f        # View logs
+#
+# Security:
+#   - No volumes mounted (container can't access your files)
+#   - Localhost only networking (not exposed to internet)
+#   - Container is ephemeral (no persistence)
+#   - Runs as non-root user
+#
+# ============================================================================
+
+version: '3.8'
+
+services:
+  presidio:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: financial-anonymizer-presidio
+    ports:
+      # Only accessible from localhost - NOT exposed to network
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    # No volumes - complete isolation
+    # No environment variables with secrets
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    # Read-only filesystem (extra security)
+    read_only: true
+    # Temp directory for Python
+    tmpfs:
+      - /tmp:size=100M,mode=1777
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
