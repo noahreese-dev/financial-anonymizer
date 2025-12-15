@@ -570,11 +570,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  let step3Completed = false;
+
   function updateWorkflowFromState() {
     const hasInput = !!stagedRows || !!textareaEl.value.trim();
-    if (!hasInput) return setWorkflowStep(1);
-    if (!outputJSON) return setWorkflowStep(2);
-    return setWorkflowStep(3);
+    if (!hasInput) {
+      step3Completed = false;
+      return setWorkflowStep(1);
+    }
+    if (!outputJSON) {
+      step3Completed = false;
+      return setWorkflowStep(2);
+    }
+    // If step 3 was marked complete, show all steps as done
+    if (step3Completed) {
+      setWorkflowStep(3);
+      markStep3Done();
+    } else {
+      setWorkflowStep(3);
+    }
+  }
+
+  // Mark step 3 as completed (green checkmark)
+  function markStep3Done() {
+    step3Completed = true;
+    if (!wfStep3) return;
+    
+    const dot = wfStep3.querySelector('.wf-dot') as HTMLElement | null;
+    const numEl = wfStep3.querySelector('.wf-num') as HTMLElement | null;
+    const checkEl = wfStep3.querySelector('.wf-check') as HTMLElement | null;
+    const labelEl = wfStep3.querySelector('.wf-label') as HTMLElement | null;
+
+    // Apply "done" styling
+    wfStep3.classList.remove('opacity-50', 'bg-navy-950/40', 'border-brand-500/40');
+    wfStep3.classList.add('opacity-100', 'bg-green-500/10', 'border-green-500/30');
+
+    if (dot) {
+      dot.classList.remove('bg-brand-500/30', 'border-brand-500/50');
+      dot.classList.add('bg-green-500/30', 'border-green-500/50');
+    }
+
+    // Show checkmark, hide number
+    numEl?.classList.add('hidden');
+    checkEl?.classList.remove('hidden');
+
+    // Green label
+    if (labelEl) {
+      labelEl.classList.remove('text-brand-300', 'text-slate-400');
+      labelEl.classList.add('text-green-300');
+    }
+
+    // Green connector before step 3
+    wfConn2?.classList.remove('bg-navy-800/60');
+    wfConn2?.classList.add('bg-green-500/50');
   }
 
   // Custom remove terms (session only, per user request)
@@ -1390,9 +1438,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Closing search and reprocessing...');
     closeSearch();
     runProcessing();
-    
-    // Open fine-tune to show it was added
-    if (fineTuneSection) fineTuneSection.open = true;
   });
 
   // AI Analysis Button & Modal Logic
@@ -1438,6 +1483,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAnalysis();
     if (outputJSON) setDiagnosticsFromOutput(outputJSON);
     
+    // Mark workflow step 3 as complete
+    markStep3Done();
+    
     // Scroll to analysis
     $('analysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -1469,6 +1517,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Flash the button green
       btnCopy.classList.add('text-green-400');
+      
+      // Mark workflow step 3 as complete
+      markStep3Done();
       
       setTimeout(() => {
         iconCopy?.classList.remove('hidden');
@@ -1508,6 +1559,9 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // Mark workflow step 3 as complete
+    markStep3Done();
   });
 
   // Detail style selector (Minimal / Standard / Debug) — stored internally as ExportProfile
@@ -1715,6 +1769,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderOutput();
     renderFindingsBar();
     renderShareSafety();
+    
+    // Mark workflow step 3 as complete
+    markStep3Done();
     
     // Close modal
     deepCleanModal?.classList.add('hidden');
