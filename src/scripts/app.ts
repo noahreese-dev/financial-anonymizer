@@ -241,12 +241,12 @@ function renderOutput(highlightTerm?: string) {
   }
 
   const anonymizer = new FinancialAnonymizer(); // defaults match base behavior
-  // Large CSV safety: render a preview only
-  const previewRows = activeFormat === 'json' ? 300 : activeFormat === 'storyline' ? 2000 : 500;
+  // Show all rows (no preview limit - user explicitly requested full display)
+  const maxRows = Infinity;
 
   // Profile shapes headers/preview notes (AI Safe is cleaner for prompts).
-    const out = anonymizer.formatData(outputJSON, activeFormat, {
-    maxRows: previewRows,
+  const out = anonymizer.formatData(outputJSON, activeFormat, {
+    maxRows,
     highlightTerm,
     detailLevel: activeDetailLevel,
     profile: activeProfile
@@ -296,14 +296,9 @@ function renderOutput(highlightTerm?: string) {
         : activeFormat;
   filenameEl.textContent = `output.${ext}`;
 
+  // Hide output note - we now show all rows
   if (outputNote) {
-    const isTruncated = outputJSON.transactions.length > previewRows;
-    if (isTruncated) {
-      outputNote.textContent = `Previewing first ${previewRows} rows. Use Download for full export.`;
-      outputNote.classList.remove('hidden');
-    } else {
-      outputNote.classList.add('hidden');
-    }
+    outputNote.classList.add('hidden');
   }
 
   renderFindingsBar();
@@ -1009,17 +1004,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Highlight button - toggles PII highlighting in the OUTPUT
   const btnHighlightChanges = $('btn-highlight-changes') as HTMLButtonElement | null;
   
-  // Initialize global flag from localStorage
-  try {
-    highlightChanges = localStorage.getItem('fa:highlightChanges') === 'true';
-    (window as any).__highlightChanges = highlightChanges;
-  } catch { /* ignore */ }
-  
-  // Apply initial visual state if highlight is on
-  if (highlightChanges && btnHighlightChanges) {
-    btnHighlightChanges.classList.add('bg-white/10', 'text-white');
-    btnHighlightChanges.classList.remove('text-slate-500');
-  }
+  // Always start with highlight OFF (don't persist - user preference per session)
+  highlightChanges = false;
+  (window as any).__highlightChanges = false;
+  try { localStorage.removeItem('fa:highlightChanges'); } catch { /* ignore */ }
   
   btnHighlightChanges?.addEventListener('click', () => {
     highlightChanges = !highlightChanges;
@@ -1195,8 +1183,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // We need to search both merchant AND description since output uses merchant when available
     searchMatches = [];
     const termLower = term.toLowerCase();
-    const previewRows = activeFormat === 'json' ? 300 : activeFormat === 'storyline' ? 2000 : 500;
-    const rowsToScan = outputJSON.transactions.slice(0, Math.max(0, previewRows));
+    // Search all rows (no limit)
+    const rowsToScan = outputJSON.transactions;
     
     for (let i = 0; i < rowsToScan.length; i++) {
       const t = rowsToScan[i];
@@ -1375,11 +1363,10 @@ document.addEventListener('DOMContentLoaded', () => {
     await runPreflightForFile(fileInput.files[0], { pageStart: isFinite(ps) ? ps : 1, pageEnd: isFinite(pe) ? pe : undefined });
   });
 
-  // Copy
+  // Copy (copies all rows)
   btnCopy?.addEventListener('click', async () => {
     if (!outputJSON) return;
-    const previewRows = activeFormat === 'json' ? 300 : activeFormat === 'storyline' ? 2000 : 500;
-    const formatted = new FinancialAnonymizer().formatData(outputJSON, activeFormat, { maxRows: previewRows, detailLevel: activeDetailLevel, profile: activeProfile });
+    const formatted = new FinancialAnonymizer().formatData(outputJSON, activeFormat, { maxRows: Infinity, detailLevel: activeDetailLevel, profile: activeProfile });
     try {
       await navigator.clipboard.writeText(formatted);
       
