@@ -155,8 +155,8 @@ import Layout from '../layouts/Layout.astro';
                 placeholder="e.g. 'John Doe' or '12345'"
                 class="flex-1 bg-navy-950/30 border border-navy-800/50 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/40 focus:outline-none"
               />
-              <button id="btn-add-term" class="px-4 py-2 bg-brand-600/20 hover:bg-brand-600/30 text-brand-300 text-xs font-semibold rounded-lg border border-brand-500/30 transition-colors">
-                Add
+              <button id="btn-add-term" class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-semibold rounded-lg border border-red-500/30 transition-colors">
+                Remove
               </button>
             </div>
             <div id="custom-terms-chips" class="flex flex-wrap gap-2 min-h-[32px]"></div>
@@ -292,17 +292,13 @@ import Layout from '../layouts/Layout.astro';
                   <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
                 <!-- Tooltip popup (hidden by default, shown on hover/click) -->
-                <div id="findings-tooltip" class="hidden absolute left-0 bottom-full mb-2 w-64 p-3 bg-navy-900 border border-navy-700 rounded-lg shadow-xl text-left z-50">
+                <div id="findings-tooltip" class="hidden absolute left-0 bottom-full mb-2 w-56 p-3 bg-navy-900 border border-navy-700 rounded-lg shadow-xl text-left z-50">
                   <div class="text-[11px] text-slate-300 space-y-2">
-                    <div class="flex items-start gap-2">
-                      <span class="w-2 h-2 rounded-full bg-red-400 mt-1 flex-shrink-0"></span>
-                      <span><strong class="text-red-300">Sensitive data</strong> — Phone numbers, emails, SSNs, URLs, addresses replaced with safe placeholders</span>
+                    <div>
+                      <strong class="text-red-300">Sensitive data removed</strong>
+                      <p class="text-[10px] text-slate-400 mt-1">Phone numbers, emails, SSNs, URLs, and addresses have been replaced with safe placeholders.</p>
                     </div>
-                    <div class="flex items-start gap-2">
-                      <span class="w-2 h-2 rounded-full bg-green-400 mt-1 flex-shrink-0"></span>
-                      <span><strong class="text-green-300">General cleanup</strong> — Messy merchant names standardized, your custom terms removed</span>
-                    </div>
-                    <div class="text-[10px] text-slate-500 pt-1 border-t border-navy-700">Click any chip to search & delete more.</div>
+                    <div class="text-[10px] text-slate-500 pt-2 border-t border-navy-700">Click any chip to search & delete more.</div>
                   </div>
                 </div>
               </button>

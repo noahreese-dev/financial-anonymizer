@@ -96,8 +96,7 @@ function renderFindingsBar() {
   addPII('Loc', 'location' as any, 'LOC');
 
   if ((rep.idTokensRemoved ?? 0) > 0) items.push({ label: 'IDs', count: rep.idTokensRemoved, tone: 'neutral' });
-  if ((rep.merchantNormalized ?? 0) > 0) items.push({ label: 'Merchants', count: rep.merchantNormalized, tone: 'good' });
-  if ((rep.customRemoved ?? 0) > 0) items.push({ label: 'Your Terms', count: rep.customRemoved, tone: 'good' });
+  // Removed green chips (Merchants, Custom) as they were confusing - only show red PII items
 
   // Render as compact chips. PII chips are clickable (data-find) to jump via search.
   const html = items.map((it) => {
