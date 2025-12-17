@@ -900,14 +900,20 @@ import Layout from '../layouts/Layout.astro';
       </div>
       
       <!-- Footer Actions -->
-      <div id="wizard-footer" class="flex-shrink-0 px-5 py-4 border-t border-navy-800/50 bg-navy-950/70 flex justify-end items-center gap-3 hidden">
-        <button id="btn-wizard-cancel" class="px-4 py-2 text-sm text-slate-400 hover:text-white font-medium transition-colors">
-          Cancel
+      <div id="wizard-footer" class="flex-shrink-0 px-5 py-4 border-t border-navy-800/50 bg-navy-950/70 flex justify-between items-center gap-3 hidden">
+        <button id="btn-trust-ai" class="px-4 py-2.5 bg-gradient-to-r from-green-600/80 to-emerald-600/80 hover:from-green-500 hover:to-emerald-500 text-white text-sm font-semibold rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center gap-2 border border-green-500/30">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+          <span>Auto Categorize</span>
         </button>
-        <button id="btn-wizard-apply" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-bold rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center gap-2">
-          <span>Apply</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        </button>
+        <div class="flex items-center gap-3">
+          <button id="btn-wizard-cancel" class="px-4 py-2 text-sm text-slate-400 hover:text-white font-medium transition-colors">
+            Cancel
+          </button>
+          <button id="btn-wizard-apply" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-bold rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center gap-2">
+            <span>Apply</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </button>
+        </div>
       </div>
 
     </div>

@@ -2412,6 +2412,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function calculateRecommendationConfidence(text: string, entityType: string, label: string): number {
     const t = normalizeForGrouping(text);
+    const originalText = text.toLowerCase().trim();
     
     // Known brand exact match: 95%
     for (const [brand, labels] of Object.entries(KNOWN_BRANDS)) {
@@ -2420,52 +2421,63 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // Strong pattern matches: 85%
+    // Strong pattern matches: 85-90%
     if (entityType === 'ORGANIZATION' || entityType === 'ORG') {
       // Software/Tech patterns
-      if (label === 'SOFTWARE' && /gamma|notion|figma|canva|adobe|microsoft|google|slack|zoom|dropbox|github|atlassian|jira|openai|anthropic|claude|chatgpt|ai\b|software|app\b|saas/i.test(text)) {
-        return 0.85;
+      if (label === 'SOFTWARE' && /gamma|notion|figma|canva|adobe|microsoft|google|slack|zoom|dropbox|github|atlassian|jira|openai|anthropic|claude|chatgpt|ai\b|software|app\b|saas/i.test(originalText)) {
+        return 0.90;
       }
       // Gas station patterns
-      if (label === 'GAS' && /shell|esso|petro|ultramar|mobil|chevron|husky|sunoco|gas|fuel|petroleum|stn\b|station/i.test(text)) {
-        return 0.85;
+      if (label === 'GAS' && /shell|esso|petro|ultramar|mobil|chevron|husky|sunoco|gas|fuel|petroleum|stn\b|station/i.test(originalText)) {
+        return 0.88;
       }
       // Food/restaurant patterns
-      if (label === 'FOOD' && /tim horton|starbucks|mcdonald|wendy|burger|subway|pizza|coffee|restaurant|cafe|bakery|donut|bagel|sushi|thai|chinese|indian|deli|bistro|grill|pub|bar\b|popeye|chipotle|taco|kfc|a&w|dairy queen|dq\b|five guys|harvey/i.test(text)) {
-        return 0.85;
+      if (label === 'FOOD' && /tim horton|starbucks|mcdonald|wendy|burger|subway|pizza|coffee|restaurant|cafe|bakery|donut|bagel|sushi|thai|chinese|indian|deli|bistro|grill|pub|bar\b|popeye|chipotle|taco|kfc|a&w|dairy queen|dq\b|five guys|harvey/i.test(originalText)) {
+        return 0.87;
       }
       // Subscription patterns
-      if (label === 'SUBSCRIPTION' && /netflix|spotify|disney|hulu|amazon prime|apple|youtube|hbo|crave|paramount|twitch|patreon|substack/i.test(text)) {
-        return 0.85;
+      if (label === 'SUBSCRIPTION' && /netflix|spotify|disney|hulu|amazon prime|apple|youtube|hbo|crave|paramount|twitch|patreon|substack/i.test(originalText)) {
+        return 0.89;
       }
     }
     
-    // Domain patterns: 80%
-    if (label === 'SOFTWARE' && /\.ai\b|\.app\b|\.io\b/i.test(text)) {
-      return 0.80;
+    // Domain patterns: 80-85%
+    if (label === 'SOFTWARE' && /\.ai\b|\.app\b|\.io\b/i.test(originalText)) {
+      return 0.82;
     }
     
-    // Keyword-based matches: 70-75%
+    // Keyword-based matches: 65-80% (more nuanced scoring)
     if (entityType === 'ORGANIZATION' || entityType === 'ORG') {
-      // Check if label matches keyword patterns
-      const keywordPatterns: Record<string, RegExp> = {
-        'GROCERIES': /walmart|costco|amazon|loblaws|sobeys|metro|safeway|whole foods|trader|grocery|supermarket|market\b|freshco|food basics|no frills/i,
-        'SHOPPING': /canadian tire|home depot|ikea|best buy|staples|dollarama|winners|shoppers|target|marshalls|sephora|lululemon/i,
-        'TRANSPORT': /uber|lyft|transit|via rail|air canada|westjet|porter|airline|taxi|cab\b|bus\b|train\b|presto|ttc|stm|oc transpo/i,
-        'UTILITY': /hydro|electric|enbridge|fortis|water\b|internet/i,
-        'BANK': /bank|td\b|rbc|scotia|cibc|bmo|national bank|desjardins|credit union|paypal|stripe|interac|wise\b|wealthsimple/i,
-        'SERVICE': /wash|clean|repair|maintenance|salon|spa|gym|fitness|dental|clinic|medical|physio|massage|goodlife|la fitness|planet fitness/i,
-        'INSURANCE': /insurance|intact|sunlife|manulife|great-west|desjardins|allstate|state farm/i,
-        'HEALTH': /pharmacy|shoppers drug|rexall|medical|clinic|hospital|dental|vision|health|cvs|walgreens/i
+      const keywordPatterns: Record<string, { pattern: RegExp; confidence: number }> = {
+        'GROCERIES': { pattern: /walmart|costco|amazon|loblaws|sobeys|metro|safeway|whole foods|trader|grocery|supermarket|market\b|freshco|food basics|no frills/i, confidence: 0.78 },
+        'SHOPPING': { pattern: /canadian tire|home depot|ikea|best buy|staples|dollarama|winners|shoppers|target|marshalls|sephora|lululemon/i, confidence: 0.76 },
+        'TRANSPORT': { pattern: /uber|lyft|transit|via rail|air canada|westjet|porter|airline|taxi|cab\b|bus\b|train\b|presto|ttc|stm|oc transpo/i, confidence: 0.77 },
+        'UTILITY': { pattern: /hydro|electric|enbridge|fortis|water\b|internet/i, confidence: 0.80 },
+        'BANK': { pattern: /bank|td\b|rbc|scotia|cibc|bmo|national bank|desjardins|credit union|paypal|stripe|interac|wise\b|wealthsimple/i, confidence: 0.79 },
+        'SERVICE': { pattern: /wash|clean|repair|maintenance|salon|spa|gym|fitness|dental|clinic|medical|physio|massage|goodlife|la fitness|planet fitness/i, confidence: 0.72 },
+        'INSURANCE': { pattern: /insurance|intact|sunlife|manulife|great-west|desjardins|allstate|state farm/i, confidence: 0.75 },
+        'HEALTH': { pattern: /pharmacy|shoppers drug|rexall|medical|clinic|hospital|dental|vision|health|cvs|walgreens/i, confidence: 0.74 },
+        'MERCHANT': { pattern: /store|shop|mart|retail|outlet/i, confidence: 0.55 } // Generic merchant - lower confidence
       };
       
-      if (keywordPatterns[label] && keywordPatterns[label].test(text)) {
-        return 0.75;
+      if (keywordPatterns[label] && keywordPatterns[label].pattern.test(originalText)) {
+        return keywordPatterns[label].confidence;
       }
     }
     
-    // Default confidence for any suggestion: 50%
-    return 0.50;
+    // Generic fallback based on entity type
+    if (label === 'MERCHANT' && (entityType === 'ORGANIZATION' || entityType === 'ORG')) {
+      return 0.45; // Generic organization as merchant - low confidence
+    }
+    if (label === 'SERVICE' && (entityType === 'ORGANIZATION' || entityType === 'ORG')) {
+      return 0.40; // Generic organization as service - low confidence
+    }
+    if (label === 'SHOPPING' && (entityType === 'ORGANIZATION' || entityType === 'ORG')) {
+      return 0.35; // Generic organization as shopping - very low confidence
+    }
+    
+    // Default: very low confidence if no match
+    return 0.25;
   }
 
   /**
@@ -2484,7 +2496,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sort by confidence (highest first)
     withConfidence.sort((a, b) => b.confidence - a.confidence);
     
-    return withConfidence;
+    // Only pad with defaults if we have at least one good recommendation (>50% confidence)
+    // This prevents showing all low-confidence defaults when we have no real recommendations
+    if (withConfidence.length > 0 && withConfidence[0].confidence > 0.50 && withConfidence.length < 3) {
+      const defaults = ['MERCHANT', 'SERVICE', 'SHOPPING'];
+      const existingLabels = new Set(withConfidence.map(s => s.label));
+      for (const defaultLabel of defaults) {
+        if (withConfidence.length >= 3) break;
+        if (!existingLabels.has(defaultLabel)) {
+          // Calculate actual confidence for defaults (not just 0.30)
+          const defaultConf = calculateRecommendationConfidence(text, entityType, defaultLabel);
+          withConfidence.push({
+            label: defaultLabel,
+            confidence: Math.max(0.30, defaultConf) // At least 30%, but use calculated if higher
+          });
+        }
+      }
+      // Re-sort after adding defaults
+      withConfidence.sort((a, b) => b.confidence - a.confidence);
+    }
+    
+    // Return top 3 (or fewer if we don't have good recommendations)
+    return withConfidence.slice(0, 3);
   }
 
   // Smart label suggestions based on Presidio entity type + keyword patterns
@@ -2643,6 +2676,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const wizardFooter = $('wizard-footer');
   const btnWizardCancel = $('btn-wizard-cancel');
   const btnWizardApply = $('btn-wizard-apply');
+  const btnTrustAI = $('btn-trust-ai');
   const btnDeepCleanClose = $('btn-deep-clean-close');
   const btnDeepCleanMinimize = $('btn-deep-clean-minimize');
   const btnDeepCleanRestore = $('btn-deep-clean-restore');
@@ -3207,14 +3241,14 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="text-xs font-semibold">Remove</div>
               <div class="text-[10px] text-slate-500 mt-1">Delete this text</div>
             </button>
-            <button id="btn-dc-label" class="px-3 py-3 rounded-xl border border-navy-800/70 bg-navy-900/30 hover:bg-blue-500/10 hover:border-blue-500/30 transition-all text-slate-200">
-              <div class="w-10 h-10 mx-auto rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold mb-2">🏷</div>
-              <div class="text-xs font-semibold">Context</div>
-              <div class="text-[10px] text-slate-500 mt-1">Keep + add label</div>
+            <button id="btn-dc-label" class="px-3 py-3 rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/20 hover:border-blue-500/50 transition-all text-slate-200 ring-1 ring-blue-500/30">
+              <div class="w-10 h-10 mx-auto rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-300 font-bold mb-2">🏷</div>
+              <div class="text-xs font-semibold text-blue-200">Context</div>
+              <div class="text-[10px] text-blue-300/80 mt-1">Top 3 shown below</div>
             </button>
           </div>
 
-          <div id="dc-label-panel" class="mt-4 p-4 rounded-xl border border-navy-800/70 bg-navy-900/30">
+          <div id="dc-label-panel" class="mt-4 p-4 rounded-xl border border-blue-500/30 bg-blue-500/5">
             ${top3Suggestions.length > 0 ? `
             <div class="mb-4">
               <div class="text-[9px] uppercase tracking-wider text-green-400/80 font-bold mb-3 flex items-center gap-1.5">
@@ -3609,6 +3643,78 @@ document.addEventListener('DOMContentLoaded', () => {
   btnDeepCleanClose?.addEventListener('click', closeDeepCleanModal);
   btnWizardApply?.addEventListener('click', applyDeepCleanResults);
   
+  /**
+   * Auto Categorize: Auto-categorize all items with recommendations, then show review screen.
+   */
+  function trustAIAndReview() {
+    if (!reviewOrder.length) return;
+    
+    const AUTO_CATEGORIZE_THRESHOLD = 0.50; // Threshold for auto-categorization (50%+)
+    let autoCategorizedCount = 0;
+    let keptCount = 0;
+    
+    // Auto-categorize all items that have recommendations
+    reviewOrder.forEach(c => {
+      const key = getCandKey(c);
+      const decision = candidateDecisions.get(key);
+      
+      // Skip if already explicitly decided by user
+      if (decision?.explicitlyDecided) return;
+      
+      // Never auto-categorize sensitive PII
+      if (isSensitivePII(c.type)) {
+        candidateDecisions.set(key, {
+          action: 'keep',
+          explicitlyDecided: false
+        });
+        keptCount++;
+        return;
+      }
+      
+      // Get top recommendation
+      const suggestionsWithConfidence = getSmartLabelSuggestionsWithConfidence(c.text, c.type);
+      if (suggestionsWithConfidence.length > 0 && suggestionsWithConfidence[0].confidence >= AUTO_CATEGORIZE_THRESHOLD) {
+        const autoLabel = suggestionsWithConfidence[0].label;
+        candidateDecisions.set(key, {
+          action: 'context',
+          contextLabel: autoLabel,
+          explicitlyDecided: false // Auto-applied
+        });
+        autoCategorizedCount++;
+      } else {
+        // If no good recommendation, default to "Keep"
+        candidateDecisions.set(key, {
+          action: 'keep',
+          explicitlyDecided: false
+        });
+        keptCount++;
+      }
+    });
+    
+    console.log(`Auto Categorize: ${autoCategorizedCount} categorized, ${keptCount} kept`);
+    
+    // Switch to List mode to show all results
+    setDeepCleanMode('list');
+    
+    // Update stats and re-render
+    updateReviewStats();
+    renderCandidateList();
+    
+    // Scroll to top of list to show results
+    setTimeout(() => {
+      if (candidateList) {
+        candidateList.scrollTop = 0;
+      }
+    }, 100);
+    
+    // Show confirmation message
+    if (wizardStepSubtitle) {
+      wizardStepSubtitle.textContent = `${autoCategorizedCount} items auto-categorized • Review and adjust as needed`;
+    }
+  }
+  
+  btnTrustAI?.addEventListener('click', trustAIAndReview);
+  
   // Minimize/Restore handlers
   btnDeepCleanMinimize?.addEventListener('click', () => {
     deepCleanModal?.classList.add('hidden');
@@ -3772,9 +3878,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Close modal on backdrop click
+  // Close modal on backdrop click (only if clicking the backdrop itself, not child elements)
   deepCleanModal?.addEventListener('click', (e) => {
-    if (e.target === deepCleanModal) closeDeepCleanModal();
+    // Only close if clicking directly on the modal backdrop, not on any child elements
+    const modalContent = $('deep-clean-modal-content');
+    if (e.target === deepCleanModal && modalContent && !modalContent.contains(e.target as Node)) {
+      closeDeepCleanModal();
+    }
   });
   
   // Close on Escape
@@ -3794,4 +3904,5 @@ document.addEventListener('DOMContentLoaded', () => {
   // Call on initial load and after any processing
   updateDeepCleanButtonState();
 });
+
 
