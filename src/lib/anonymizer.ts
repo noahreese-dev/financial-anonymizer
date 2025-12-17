@@ -83,6 +83,159 @@ export type ExportProfile = 'ai_safe' | 'audit' | 'debug';
  * ------------------------------------------------------------------
  */
 
+/**
+ * Known merchants with clear, single-purpose categories.
+ * Used for automatic categorization during cleanup.
+ * Conservative list: only ultra-obvious brands.
+ */
+const KNOWN_MERCHANTS: Record<string, string> = {
+  // Food & Coffee (Restaurants/Cafes)
+  'tim hortons': 'FOOD',
+  'starbucks': 'FOOD',
+  'mcdonald': 'FOOD',
+  'subway': 'FOOD',
+  'wendy': 'FOOD',
+  'burger king': 'FOOD',
+  'dunkin': 'FOOD',
+  'popeyes': 'FOOD',
+  'chipotle': 'FOOD',
+  'panera': 'FOOD',
+  'taco bell': 'FOOD',
+  'kfc': 'FOOD',
+  'pizza hut': 'FOOD',
+  'domino': 'FOOD',
+  'chick-fil-a': 'FOOD',
+  'five guys': 'FOOD',
+  'dairy queen': 'FOOD',
+  'a&w': 'FOOD',
+  'mary brown': 'FOOD',
+  'harveys': 'FOOD',
+  'swiss chalet': 'FOOD',
+  'boston pizza': 'FOOD',
+  
+  // Gas Stations (only unambiguous names)
+  'shell gas': 'GAS',
+  'shell station': 'GAS',
+  'esso': 'GAS',
+  'petro-canada': 'GAS',
+  'petro canada': 'GAS',
+  'ultramar': 'GAS',
+  'chevron': 'GAS',
+  'mobil': 'GAS',
+  'exxon': 'GAS',
+  'exxonmobil': 'GAS',
+  'circle k': 'GAS',
+  'sunoco': 'GAS',
+  'husky gas': 'GAS',
+  'canadian tire gas': 'GAS',
+  // Removed: 'shell' (too generic), 'pioneer' (could be business name), 'bp ' (too short), 'husky' (could be pet store)
+  
+  // Streaming & Subscriptions
+  'netflix': 'SUBSCRIPTION',
+  'spotify': 'SUBSCRIPTION',
+  'disney+': 'SUBSCRIPTION',
+  'amazon prime': 'SUBSCRIPTION',
+  'apple music': 'SUBSCRIPTION',
+  'youtube premium': 'SUBSCRIPTION',
+  'hulu': 'SUBSCRIPTION',
+  'hbo max': 'SUBSCRIPTION',
+  'crave': 'SUBSCRIPTION',
+  'paramount+': 'SUBSCRIPTION',
+  'peacock': 'SUBSCRIPTION',
+  'audible': 'SUBSCRIPTION',
+  
+  // Groceries & Retail (only unambiguous names)
+  'walmart': 'GROCERIES',
+  'costco': 'GROCERIES',
+  'loblaws': 'GROCERIES',
+  'sobeys': 'GROCERIES',
+  'safeway': 'GROCERIES',
+  'whole foods': 'GROCERIES',
+  'trader joe': 'GROCERIES',
+  'no frills': 'GROCERIES',
+  'food basics': 'GROCERIES',
+  'freshco': 'GROCERIES',
+  'superstore': 'GROCERIES',
+  'real canadian superstore': 'GROCERIES',
+  'save-on-foods': 'GROCERIES',
+  'kroger': 'GROCERIES',
+  'publix': 'GROCERIES',
+  'target': 'SHOPPING',
+  'amazon.com': 'SHOPPING',
+  'amazon.ca': 'SHOPPING',
+  'best buy': 'SHOPPING',
+  'ikea': 'SHOPPING',
+  'home depot': 'SHOPPING',
+  'lowes': 'SHOPPING',
+  'lowe\'s': 'SHOPPING',
+  'canadian tire': 'SHOPPING',
+  // Removed: 'metro' (could be transit), 'iga' (too short/ambiguous), 'amazon.c' (incomplete)
+  
+  // Software / AI / Tech
+  'cursor': 'SOFTWARE',
+  'claude.ai': 'SOFTWARE',
+  'chatgpt': 'SOFTWARE',
+  'openai': 'SOFTWARE',
+  'notion': 'SOFTWARE',
+  'figma': 'SOFTWARE',
+  'canva': 'SOFTWARE',
+  'adobe': 'SOFTWARE',
+  'microsoft 365': 'SOFTWARE',
+  'gamma.app': 'SOFTWARE',
+  'dropbox': 'SOFTWARE',
+  'slack': 'SOFTWARE',
+  'zoom': 'SOFTWARE',
+  'github': 'SOFTWARE',
+  'google workspace': 'SOFTWARE',
+  'icloud': 'SOFTWARE',
+  
+  // Transport & Delivery
+  'uber': 'TRANSPORT',
+  'lyft': 'TRANSPORT',
+  'doordash': 'DELIVERY',
+  'skip the dishes': 'DELIVERY',
+  'uber eats': 'DELIVERY',
+  'grubhub': 'DELIVERY',
+  'instacart': 'DELIVERY',
+  
+  // Telecom & Utilities (only unambiguous names)
+  'hydro one': 'UTILITY',
+  'hydro quebec': 'UTILITY',
+  'bc hydro': 'UTILITY',
+  'enbridge': 'UTILITY',
+  'bell canada': 'TELECOM',
+  'bell mobility': 'TELECOM',
+  'rogers wireless': 'TELECOM',
+  'rogers communications': 'TELECOM',
+  'telus': 'TELECOM',
+  'telus mobility': 'TELECOM',
+  'fido': 'TELECOM',
+  'koodo': 'TELECOM',
+  'koodo mobile': 'TELECOM',
+  'freedom mobile': 'TELECOM',
+  'virgin mobile': 'TELECOM',
+  'virgin plus': 'TELECOM',
+  'shaw communications': 'TELECOM',
+  'shaw cable': 'TELECOM',
+  'videotron': 'TELECOM',
+  'at&t': 'TELECOM',
+  'verizon': 'TELECOM',
+  't-mobile': 'TELECOM',
+  // Removed: 'bell' (could be name), 'rogers' (could be name), 'shaw' (could be name), 'hydro' (too generic)
+  
+  // Fitness & Health
+  'goodlife': 'FITNESS',
+  'planet fitness': 'FITNESS',
+  'anytime fitness': 'FITNESS',
+  'ymca': 'FITNESS',
+  'la fitness': 'FITNESS',
+  
+  // Entertainment
+  'cineplex': 'ENTERTAINMENT',
+  'amc': 'ENTERTAINMENT',
+  'regal': 'ENTERTAINMENT',
+};
+
 const PATTERNS = {
   DATE_ISO: /^\d{4}-\d{2}-\d{2}$/,
   DATE_US: /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,
@@ -488,49 +641,18 @@ export class FinancialAnonymizer {
   public formatData(
     data: SanitizedData,
     format: OutputFormat,
-    opts?: { maxRows?: number; highlightTerm?: string; detailLevel?: DetailLevel; profile?: ExportProfile }
+    opts?: { maxRows?: number; detailLevel?: DetailLevel; profile?: ExportProfile }
   ): string {
     if (!data || !data.transactions.length) return '';
     const maxRows = opts?.maxRows;
-    const highlightTerm = opts?.highlightTerm;
     const profile: ExportProfile = opts?.profile ?? 'ai_safe';
     const detailLevel = opts?.detailLevel ?? (profile === 'audit' ? 'standard' : profile === 'debug' ? 'debug' : 'minimal');
     const rows = typeof maxRows === 'number' ? data.transactions.slice(0, Math.max(0, maxRows)) : data.transactions;
     const truncated = typeof maxRows === 'number' && data.transactions.length > maxRows;
 
-    // Helper to highlight text if term is present (case-insensitive)
-    const hl = (text: string) => {
-      if (!highlightTerm || !text) return text;
-      // We need to return a string with <mark> tags.
-      // Since this is for display in a <pre> via innerHTML, we must escape existing HTML entities first,
-      // BUT formatData is usually creating raw text. 
-      // The app.ts sets innerHTML. So we should escape the base text, then wrap matches.
-      
-      // 1. Escape HTML specials to prevent injection
-      const safe = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-      
-      // 2. Highlight
-      const escapedTerm = highlightTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(`(${escapedTerm})`, 'gi');
-      return safe.replace(re, '<mark class="bg-brand-500/30 text-white rounded-sm px-0.5">$1</mark>');
-    };
-
-    // Helper: When NOT highlighting, we still need to sanitize for CSV/JSON if we were doing strict escaping,
-    // but typically formatData returns raw strings. 
-    // HOWEVER, if highlightTerm is ON, we are returning HTML-ready strings.
-    // This creates a divergence. 
-    // Ideally, app.ts handles HTML escaping. But since we inject <mark> here, we must handle it here.
-    
-    // Strategy: If highlightTerm is provided, we assume the output is for innerHTML display.
-    // We escape ALL values.
-    // If highlightTerm is NOT provided, we return raw text (standard behavior).
-    
-    const fmtVal = (val: string | number | undefined, applyHl = false) => {
-      const s = String(val ?? '');
-      if (highlightTerm) {
-        return applyHl ? hl(s) : s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      }
-      return s;
+    // Helper to format values - returns clean text only (no HTML/formatting)
+    const fmtVal = (val: string | number | undefined) => {
+      return String(val ?? '');
     };
 
     switch (format) {
@@ -587,25 +709,25 @@ export class FinancialAnonymizer {
             csvHeader = 'Date,Description,Amount\n';
             csvRows = rows.map(t => {
               const cleanDesc = (t.merchant && t.merchant !== 'Unknown') ? t.merchant : t.description;
-              return `"${fmtVal(t.date)}","${fmtVal(cleanDesc, true).replace(/"/g, '""')}",${t.amount.toFixed(2)}`;
+              return `"${fmtVal(t.date)}","${fmtVal(cleanDesc).replace(/"/g, '""')}",${t.amount.toFixed(2)}`;
             });
             break;
           case 'standard':
             csvHeader = 'Date,Merchant,Description,Amount\n';
             csvRows = rows.map(t => 
-              `"${fmtVal(t.date)}","${fmtVal(t.merchant, true).replace(/"/g, '""')}","${fmtVal(t.description, true).replace(/"/g, '""')}",${t.amount.toFixed(2)}`
+              `"${fmtVal(t.date)}","${fmtVal(t.merchant).replace(/"/g, '""')}","${fmtVal(t.description).replace(/"/g, '""')}",${t.amount.toFixed(2)}`
             );
             break;
           case 'detailed':
             csvHeader = 'Date,Merchant,Category,Description,Amount\n';
             csvRows = rows.map(t => 
-              `"${fmtVal(t.date)}","${fmtVal(t.merchant, true).replace(/"/g, '""')}","${fmtVal(t.category, true).replace(/"/g, '""')}","${fmtVal(t.description, true).replace(/"/g, '""')}",${t.amount.toFixed(2)}`
+              `"${fmtVal(t.date)}","${fmtVal(t.merchant).replace(/"/g, '""')}","${fmtVal(t.category).replace(/"/g, '""')}","${fmtVal(t.description).replace(/"/g, '""')}",${t.amount.toFixed(2)}`
             );
             break;
           case 'debug':
             csvHeader = 'Date,Merchant,Category,Description,Amount,Type,Source,CategoryConfidence\n';
             csvRows = rows.map(t => 
-              `"${fmtVal(t.date)}","${fmtVal(t.merchant, true).replace(/"/g, '""')}","${fmtVal(t.category, true).replace(/"/g, '""')}","${fmtVal(t.description, true).replace(/"/g, '""')}",${t.amount.toFixed(2)},${t.type},${t.inferenceSource},${(t.categoryConfidence ?? 0).toFixed(2)}`
+              `"${fmtVal(t.date)}","${fmtVal(t.merchant).replace(/"/g, '""')}","${fmtVal(t.category).replace(/"/g, '""')}","${fmtVal(t.description).replace(/"/g, '""')}",${t.amount.toFixed(2)},${t.type},${t.inferenceSource},${(t.categoryConfidence ?? 0).toFixed(2)}`
             );
             break;
         }
@@ -613,35 +735,74 @@ export class FinancialAnonymizer {
         return ((profile === 'ai_safe' || !truncated) ? '' : `# PREVIEW: first ${maxRows} rows\n`) + csvHeader + csvRows.join('\n');
 
       case 'markdown':
+        // Helper to pad a string to a specific width (left-aligned for text, right-aligned for numbers)
+        const padCell = (text: string, width: number, alignRight = false): string => {
+          const str = String(text);
+          if (str.length >= width) return str;
+          return alignRight ? str.padStart(width) : str.padEnd(width);
+        };
+
         let mdHeader = '';
         let mdRows: string[] = [];
         
         switch (detailLevel) {
-          case 'minimal':
-            mdHeader = '| Date | Description | Amount |\n|---|---|---:|\n';
+          case 'minimal': {
+            // Calculate max widths for each column
+            const dateWidth = Math.max(4, ...rows.map(t => fmtVal(t.date).length));
+            const descWidth = Math.max(11, ...rows.map(t => {
+              const cleanDesc = (t.merchant && t.merchant !== 'Unknown') ? t.merchant : t.description;
+              return fmtVal(cleanDesc).length;
+            }));
+            const amountWidth = Math.max(6, ...rows.map(t => t.amount.toFixed(2).length));
+            
+            mdHeader = `| ${padCell('Date', dateWidth)} | ${padCell('Description', descWidth)} | ${padCell('Amount', amountWidth, true)} |\n\n`;
             mdRows = rows.map(t => {
               const cleanDesc = (t.merchant && t.merchant !== 'Unknown') ? t.merchant : t.description;
-              return `| ${fmtVal(t.date)} | ${fmtVal(cleanDesc, true)} | ${t.amount.toFixed(2)} |`;
+              return `| ${padCell(fmtVal(t.date), dateWidth)} | ${padCell(fmtVal(cleanDesc), descWidth)} | ${padCell(t.amount.toFixed(2), amountWidth, true)} |`;
             });
             break;
-          case 'standard':
-            mdHeader = '| Date | Merchant | Description | Amount |\n|---|---|---|---:|\n';
+          }
+          case 'standard': {
+            const dateWidth = Math.max(4, ...rows.map(t => fmtVal(t.date).length));
+            const merchantWidth = Math.max(7, ...rows.map(t => fmtVal(t.merchant).length));
+            const descWidth = Math.max(11, ...rows.map(t => fmtVal(t.description).length));
+            const amountWidth = Math.max(6, ...rows.map(t => t.amount.toFixed(2).length));
+            
+            mdHeader = `| ${padCell('Date', dateWidth)} | ${padCell('Merchant', merchantWidth)} | ${padCell('Description', descWidth)} | ${padCell('Amount', amountWidth, true)} |\n\n`;
             mdRows = rows.map(t => 
-              `| ${fmtVal(t.date)} | ${fmtVal(t.merchant, true)} | ${fmtVal(t.description, true)} | ${t.amount.toFixed(2)} |`
+              `| ${padCell(fmtVal(t.date), dateWidth)} | ${padCell(fmtVal(t.merchant), merchantWidth)} | ${padCell(fmtVal(t.description), descWidth)} | ${padCell(t.amount.toFixed(2), amountWidth, true)} |`
             );
             break;
-          case 'detailed':
-            mdHeader = '| Date | Merchant | Category | Description | Amount |\n|---|---|---|---|---:|\n';
+          }
+          case 'detailed': {
+            const dateWidth = Math.max(4, ...rows.map(t => fmtVal(t.date).length));
+            const merchantWidth = Math.max(7, ...rows.map(t => fmtVal(t.merchant).length));
+            const categoryWidth = Math.max(8, ...rows.map(t => fmtVal(t.category).length));
+            const descWidth = Math.max(11, ...rows.map(t => fmtVal(t.description).length));
+            const amountWidth = Math.max(6, ...rows.map(t => t.amount.toFixed(2).length));
+            
+            mdHeader = `| ${padCell('Date', dateWidth)} | ${padCell('Merchant', merchantWidth)} | ${padCell('Category', categoryWidth)} | ${padCell('Description', descWidth)} | ${padCell('Amount', amountWidth, true)} |\n\n`;
             mdRows = rows.map(t => 
-              `| ${fmtVal(t.date)} | ${fmtVal(t.merchant, true)} | ${fmtVal(t.category, true)} | ${fmtVal(t.description, true)} | ${t.amount.toFixed(2)} |`
+              `| ${padCell(fmtVal(t.date), dateWidth)} | ${padCell(fmtVal(t.merchant), merchantWidth)} | ${padCell(fmtVal(t.category), categoryWidth)} | ${padCell(fmtVal(t.description), descWidth)} | ${padCell(t.amount.toFixed(2), amountWidth, true)} |`
             );
             break;
-          case 'debug':
-            mdHeader = '| Date | Merchant | Category | Description | Amount | Type | Source | Conf |\n|---|---|---|---|---:|---|---|---:|\n';
+          }
+          case 'debug': {
+            const dateWidth = Math.max(4, ...rows.map(t => fmtVal(t.date).length));
+            const merchantWidth = Math.max(7, ...rows.map(t => fmtVal(t.merchant).length));
+            const categoryWidth = Math.max(8, ...rows.map(t => fmtVal(t.category).length));
+            const descWidth = Math.max(11, ...rows.map(t => fmtVal(t.description).length));
+            const amountWidth = Math.max(6, ...rows.map(t => t.amount.toFixed(2).length));
+            const typeWidth = Math.max(4, ...rows.map(t => t.type.toUpperCase().length));
+            const sourceWidth = Math.max(6, ...rows.map(t => t.inferenceSource.length));
+            const confWidth = Math.max(4, ...rows.map(t => (t.categoryConfidence ?? 0).toFixed(2).length));
+            
+            mdHeader = `| ${padCell('Date', dateWidth)} | ${padCell('Merchant', merchantWidth)} | ${padCell('Category', categoryWidth)} | ${padCell('Description', descWidth)} | ${padCell('Amount', amountWidth, true)} | ${padCell('Type', typeWidth)} | ${padCell('Source', sourceWidth)} | ${padCell('Conf', confWidth, true)} |\n\n`;
             mdRows = rows.map(t => 
-              `| ${fmtVal(t.date)} | ${fmtVal(t.merchant, true)} | ${fmtVal(t.category, true)} | ${fmtVal(t.description, true)} | ${t.amount.toFixed(2)} | **${t.type.toUpperCase()}** | ${t.inferenceSource} | ${(t.categoryConfidence ?? 0).toFixed(2)} |`
+              `| ${padCell(fmtVal(t.date), dateWidth)} | ${padCell(fmtVal(t.merchant), merchantWidth)} | ${padCell(fmtVal(t.category), categoryWidth)} | ${padCell(fmtVal(t.description), descWidth)} | ${padCell(t.amount.toFixed(2), amountWidth, true)} | ${padCell(`**${t.type.toUpperCase()}**`, typeWidth)} | ${padCell(t.inferenceSource, sourceWidth)} | ${padCell((t.categoryConfidence ?? 0).toFixed(2), confWidth, true)} |`
             );
             break;
+          }
         }
         // AI Safe profile: omit headers/preview notes for a cleaner AI-ready paste
         if (profile === 'ai_safe') {
@@ -795,22 +956,22 @@ export class FinancialAnonymizer {
           case 'minimal':
             textLines = rows.map(t => {
               const cleanDesc = (t.merchant && t.merchant !== 'Unknown') ? t.merchant : t.description;
-              return `${fmtVal(t.date)} | ${fmtVal(cleanDesc, true)} | ${t.amount.toFixed(2)}`;
+              return `${fmtVal(t.date)} | ${fmtVal(cleanDesc)} | ${t.amount.toFixed(2)}`;
             });
             break;
           case 'standard':
             textLines = rows.map(t => 
-              `${fmtVal(t.date)} | ${fmtVal(t.merchant, true)} | ${fmtVal(t.description, true)} | ${t.amount.toFixed(2)}`
+              `${fmtVal(t.date)} | ${fmtVal(t.merchant)} | ${fmtVal(t.description)} | ${t.amount.toFixed(2)}`
             );
             break;
           case 'detailed':
             textLines = rows.map(t => 
-              `${fmtVal(t.date)} | ${fmtVal(t.merchant, true)} | ${fmtVal(t.category, true)} | ${fmtVal(t.description, true)} | ${t.amount.toFixed(2)}`
+              `${fmtVal(t.date)} | ${fmtVal(t.merchant)} | ${fmtVal(t.category)} | ${fmtVal(t.description)} | ${t.amount.toFixed(2)}`
             );
             break;
           case 'debug':
             textLines = rows.map(t => 
-              `${fmtVal(t.date)} | ${fmtVal(t.merchant, true)} | ${fmtVal(t.category, true)} | ${fmtVal(t.description, true)} | ${t.amount.toFixed(2)} | ${t.type} | ${t.inferenceSource} | conf:${(t.categoryConfidence ?? 0).toFixed(2)}`
+              `${fmtVal(t.date)} | ${fmtVal(t.merchant)} | ${fmtVal(t.category)} | ${fmtVal(t.description)} | ${t.amount.toFixed(2)} | ${t.type} | ${t.inferenceSource} | conf:${(t.categoryConfidence ?? 0).toFixed(2)}`
             );
             break;
         }
@@ -1126,32 +1287,33 @@ export class FinancialAnonymizer {
     // 0. Custom removals (user-provided terms)
     clean = this.applyCustomRemovals(clean, report);
 
-    // 1. Mask Account Numbers / Cards (Always on usually, or via maskPii)
+    // 1. Remove PII (cards, SSN, email, phone, URLs, addresses, zip codes)
+    // We remove PII entirely rather than replacing with placeholders - cleaner output for AI
+    // The UI already shows what was detected via the Findings bar and Highlight button
     if (this.options.maskPii) {
       const before = clean;
-      clean = clean.replace(PATTERNS.PII_CREDIT_CARD, '****');
+      clean = clean.replace(PATTERNS.PII_CREDIT_CARD, '');
       if (report && clean !== before) report.redactions.card = (report.redactions.card || 0) + 1;
       const b2 = clean;
-      clean = clean.replace(PATTERNS.PII_SSN, '[SSN]');
+      clean = clean.replace(PATTERNS.PII_SSN, '');
       if (report && clean !== b2) report.redactions.ssn = (report.redactions.ssn || 0) + 1;
       const b3 = clean;
-      clean = clean.replace(PATTERNS.PII_EMAIL, '[EMAIL]');
+      clean = clean.replace(PATTERNS.PII_EMAIL, '');
       if (report && clean !== b3) report.redactions.email = (report.redactions.email || 0) + 1;
       const b4 = clean;
-      clean = clean.replace(PATTERNS.PII_PHONE, '[PHONE]');
+      clean = clean.replace(PATTERNS.PII_PHONE, '');
       if (report && clean !== b4) report.redactions.phone = (report.redactions.phone || 0) + 1;
       const b5 = clean;
-      clean = clean.replace(PATTERNS.PII_URL, '[URL]');
+      clean = clean.replace(PATTERNS.PII_URL, '');
       if (report && clean !== b5) report.redactions.url = (report.redactions.url || 0) + 1;
       const b6 = clean;
-      clean = clean.replace(PATTERNS.PII_ADDRESS, '[ADDRESS]');
+      clean = clean.replace(PATTERNS.PII_ADDRESS, '');
       if (report && clean !== b6) report.redactions.address = (report.redactions.address || 0) + 1;
       const b7 = clean;
-      clean = clean.replace(PATTERNS.PII_ZIP, '[ZIP]');
+      clean = clean.replace(PATTERNS.PII_ZIP, '');
       if (report && clean !== b7) report.redactions.zip = (report.redactions.zip || 0) + 1;
 
-      // 1b. Run custom removals AGAIN to catch bracketed placeholders (e.g., [URL], [PHONE])
-      // This allows users to delete PII placeholders via "Delete All"
+      // 1b. Run custom removals after PII removal
       clean = this.applyCustomRemovals(clean, report);
     }
 
@@ -1191,7 +1353,46 @@ export class FinancialAnonymizer {
     });
 
     // 7. Force Title Case
-    return clean.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()).trim();
+    clean = clean.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()).trim();
+
+    // 8. Auto-categorize known merchants
+    clean = this.applyKnownMerchantCategories(clean);
+
+    return clean;
+  }
+
+  /**
+   * Appends a category tag for well-known, single-purpose merchants.
+   * Only applies to ultra-obvious brands (Tim Hortons → [FOOD], Netflix → [SUBSCRIPTION], etc.)
+   * 
+   * CONSERVATIVE: Uses word boundary matching. When uncertain, leaves blank.
+   * Wrong categories create work for users - the software should help, not hinder.
+   */
+  private applyKnownMerchantCategories(text: string): string {
+    if (!text) return text;
+    
+    // Already has a category tag? Skip
+    if (/\[[A-Z_]+\]\s*$/.test(text)) {
+      return text;
+    }
+    
+    const lowerText = text.toLowerCase();
+    
+    // Bank/payment descriptors - we know what these are, add [BANK] category
+    // SSV = "Simply Save" (TD Bank), TFR = Transfer, ACH = Automated Clearing House, etc.
+    if (/^(ssv|tfr|ach|eft|dda|chq|wdl|dep|xfer|pmt|int|fee|e-transfer|etransfer|interac)\b/i.test(lowerText)) {
+      return `${text} [BANK]`;
+    }
+    
+    for (const [merchant, category] of Object.entries(KNOWN_MERCHANTS)) {
+      // Use word boundary matching - merchant must be a distinct word/phrase
+      // This prevents "shell" from matching "Michelle" or "seashell"
+      const regex = new RegExp(`\\b${this.escapeRegExp(merchant)}\\b`, 'i');
+      if (regex.test(lowerText)) {
+        return `${text} [${category}]`;
+      }
+    }
+    return text;
   }
 
   private normalizeMerchant(cleanedDesc: string, report?: RemovalReport): string {
@@ -1224,12 +1425,9 @@ export class FinancialAnonymizer {
     // But preserve single digits for brands like "3M" or "7-Eleven"
     s = s.replace(/\b\d{2,}\b/g, '');
 
-    // Cleanup bank transfer abbreviations - make them clearer
-    s = s.replace(/\b(ssv to|tfr-to|tfr to|transfer to)\s*\[?phone\]?/gi, 'Mobile Payment');
-    s = s.replace(/\b(ssv from|tfr-fr|tfr from|transfer from)\s*\[?phone\]?/gi, 'Mobile Transfer');
-    s = s.replace(/\b(ssv to|tfr-to|tfr to|transfer to)\b/gi, 'Payment');
-    s = s.replace(/\b(ssv from|tfr-fr|tfr from|transfer from)\b/gi, 'Incoming Transfer');
-    s = s.replace(/\b(ssv|tfr)[\s-]*(to|from)?\b/gi, 'Transfer');
+    // Note: SSV = "Simply Save" (TD Bank auto-savings), TFR = Transfer
+    // Keep these bank descriptors intact - they're useful context for AI analysis, not PII
+    // Only the phone numbers themselves get replaced with [PHONE] by PII detection above
 
     // Remove single-letter suffixes that are noise (e.g. "V" in "Adobe Inc V")
     s = s.replace(/\b[A-Z]\b/g, '');
@@ -1240,15 +1438,23 @@ export class FinancialAnonymizer {
     // Remove generic words that add no value
     s = s.replace(/\b(inc|llc|ltd|corp|company|co\.?)\b/gi, '');
 
-    // Collapse separators/punctuation
-    s = s.replace(/[^\w\s&'.-]+/g, ' ');
+    // Collapse separators/punctuation (but preserve brackets for category tags like [FOOD])
+    s = s.replace(/[^\w\s&'.\-\[\]]+/g, ' ');
     s = s.replace(/[-_]+/g, ' ');
     s = s.replace(/\s+/g, ' ').trim();
 
     if (!s) return 'Unknown';
 
-    // Title Case for readability
-    const out = s.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()).trim();
+    // Extract any category tags [LIKE_THIS] before title-casing
+    const categoryMatch = s.match(/\s*\[[A-Z_]+\]\s*$/);
+    const categoryTag = categoryMatch ? categoryMatch[0] : '';
+    const textWithoutTag = categoryMatch ? s.slice(0, -categoryTag.length) : s;
+
+    // Title Case for readability (without the category tag)
+    const titleCased = textWithoutTag.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()).trim();
+    
+    // Re-append the category tag (keeping it uppercase)
+    const out = categoryTag ? `${titleCased} ${categoryTag.trim()}` : titleCased;
     if (report && out && out !== original) report.merchantNormalized += 1;
     return out;
   }

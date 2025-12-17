@@ -108,6 +108,24 @@ The AI can ask:
 - "I see charges from 'Adobe' - is this a business expense or personal subscription?"
 - "Should I group 'Tim Hortons' and 'Starbucks' into a 'Coffee' category?"
 
+### "Other" Category
+The AI model will automatically include an **"Other"** category for transactions that:
+- **Cannot be definitively categorized** by the AI's analysis
+- **Lack sufficient context** from the transaction description or amount patterns
+- **Do not match known merchant patterns** or recognizable spending categories
+- **Are ambiguous** even after the AI's scanning and pattern recognition
+
+**Purpose**: This ensures that no transactions are left uncategorized while maintaining accuracy. Transactions placed in "Other" can be:
+- Reviewed by the user during the context-gathering phase
+- Manually categorized if the user provides additional information
+- Re-categorized by the AI as more data becomes available or patterns emerge
+
+**Example scenarios**:
+- Generic bank transfer descriptions that don't reveal the recipient's purpose
+- Unfamiliar merchant names that don't match known categories
+- Transactions with ambiguous descriptions (e.g., "Payment", "Transfer To", "Service Charge")
+- Merchant names in foreign languages or unusual formats
+
 ## Next Steps (Post-MVP)
 - [ ] Add detail level toggle (Basic / Detailed / Full Debug)
 - [ ] Implement conversational AI analysis

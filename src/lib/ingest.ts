@@ -11,6 +11,7 @@ export interface PdfExtractMeta {
   lineCount: number;
   modeColumnCount: number;
   confidence: number; // 0..1
+  usedOcr?: boolean; // true if OCR was used instead of text extraction
 }
 
 export function detectFileKind(file: File): FileKind {

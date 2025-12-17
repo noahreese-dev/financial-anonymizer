@@ -9,14 +9,12 @@ No persistence, no file access, no telemetry.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import logging
 
 # Presidio imports
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_anonymizer import AnonymizerEngine
-from presidio_anonymizer.entities import OperatorConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,7 +56,6 @@ try:
     provider = NlpEngineProvider(nlp_configuration=nlp_config)
     nlp_engine = provider.create_engine()
     analyzer = AnalyzerEngine(nlp_engine=nlp_engine)
-    anonymizer = AnonymizerEngine()
     logger.info("Presidio engines loaded successfully")
 except Exception as e:
     logger.error(f"Failed to initialize Presidio: {e}")
@@ -77,16 +74,23 @@ class Transaction(BaseModel):
     type: str
 
 
-class DeepCleanRequest(BaseModel):
+class ScanRequest(BaseModel):
     transactions: List[Transaction]
     # Optional: specify which entity types to detect
     entities: Optional[List[str]] = None
 
 
-class DeepCleanResponse(BaseModel):
-    transactions: List[Transaction]
-    findings: Dict[str, int]  # Entity type -> count found
-    total_found: int
+class Candidate(BaseModel):
+    text: str
+    type: str
+    confidence: float
+    count: int
+    locations: List[Dict[str, Any]] # e.g., [{"row": 0, "field": "merchant", "start": 0, "end": 5}]
+
+
+class ScanResponse(BaseModel):
+    candidates: List[Candidate]
+    total_candidates: int
 
 
 # ============================================================================
@@ -104,10 +108,11 @@ async def health_check():
     }
 
 
-@app.post("/deep-clean", response_model=DeepCleanResponse)
-async def deep_clean(request: DeepCleanRequest):
+@app.post("/scan", response_model=ScanResponse)
+async def scan_data(request: ScanRequest):
     """
     Run Presidio NER-based PII detection on transactions.
+    Returns grouping of CANDIDATES instead of applying redaction.
     
     Security:
     - Only processes data sent in this specific request
@@ -116,8 +121,10 @@ async def deep_clean(request: DeepCleanRequest):
     """
     
     # Default entities to detect (financial-focused)
+    # ORGANIZATION is key for merchant classification (Tim Hortons, Netflix, etc.)
     entities_to_detect = request.entities or [
         "PERSON",
+        "ORGANIZATION",  # Detects business names for smart categorization
         "PHONE_NUMBER", 
         "EMAIL_ADDRESS",
         "CREDIT_CARD",
@@ -131,51 +138,51 @@ async def deep_clean(request: DeepCleanRequest):
         "URL",
     ]
     
-    # Anonymization operators - how to replace each entity type
-    operators = {
-        "PERSON": OperatorConfig("replace", {"new_value": "[PERSON]"}),
-        "PHONE_NUMBER": OperatorConfig("replace", {"new_value": "[PHONE]"}),
-        "EMAIL_ADDRESS": OperatorConfig("replace", {"new_value": "[EMAIL]"}),
-        "CREDIT_CARD": OperatorConfig("replace", {"new_value": "****"}),
-        "US_SSN": OperatorConfig("replace", {"new_value": "[SSN]"}),
-        "US_BANK_NUMBER": OperatorConfig("replace", {"new_value": "[ACCOUNT]"}),
-        "IBAN_CODE": OperatorConfig("replace", {"new_value": "[IBAN]"}),
-        "US_PASSPORT": OperatorConfig("replace", {"new_value": "[PASSPORT]"}),
-        "US_DRIVER_LICENSE": OperatorConfig("replace", {"new_value": "[LICENSE]"}),
-        "IP_ADDRESS": OperatorConfig("replace", {"new_value": "[IP]"}),
-        "LOCATION": OperatorConfig("replace", {"new_value": "[LOCATION]"}),
-        "URL": OperatorConfig("replace", {"new_value": "[URL]"}),
-        "DEFAULT": OperatorConfig("replace", {"new_value": "[REDACTED]"}),
-    }
-    
-    findings: Dict[str, int] = {}
-    cleaned_transactions: List[Transaction] = []
-    
-    for tx in request.transactions:
-        new_desc = tx.description
-        new_merchant = tx.merchant
+    # Store candidates: Key = "text|type" -> Candidate
+    candidate_map: Dict[str, Candidate] = {}
+
+    def add_finding(text: str, entity_type: str, score: float, row_idx: int, field: str, start: int, end: int):
+        key = f"{text}|{entity_type}"
+        if key not in candidate_map:
+            candidate_map[key] = Candidate(
+                text=text,
+                type=entity_type,
+                confidence=score,
+                count=0,
+                locations=[]
+            )
         
+        cand = candidate_map[key]
+        cand.count += 1
+        # Keep track of where it was found (useful for context, debugging)
+        # Limit location storage to avoid massive payloads for common terms
+        if len(cand.locations) < 50:
+            cand.locations.append({
+                "row": row_idx,
+                "field": field,
+                "start": start,
+                "end": end
+            })
+        
+        # Update confidence if we found a higher score
+        if score > cand.confidence:
+            cand.confidence = score
+
+    
+    for i, tx in enumerate(request.transactions):
         # Analyze description field
         try:
             desc_results = analyzer.analyze(
                 text=tx.description,
                 language="en",
                 entities=entities_to_detect,
-                score_threshold=0.5  # Only high-confidence matches
+                score_threshold=0.5
             )
-            
-            if desc_results:
-                anon_result = anonymizer.anonymize(
-                    text=tx.description,
-                    analyzer_results=desc_results,
-                    operators=operators
-                )
-                new_desc = anon_result.text
-                
-                for result in desc_results:
-                    findings[result.entity_type] = findings.get(result.entity_type, 0) + 1
+            for res in desc_results:
+                text_slice = tx.description[res.start:res.end]
+                add_finding(text_slice, res.entity_type, res.score, i, "description", res.start, res.end)
         except Exception as e:
-            logger.warning(f"Error analyzing description: {e}")
+            logger.warning(f"Error analyzing description at row {i}: {e}")
         
         # Analyze merchant field
         try:
@@ -185,35 +192,19 @@ async def deep_clean(request: DeepCleanRequest):
                 entities=entities_to_detect,
                 score_threshold=0.5
             )
-            
-            if merchant_results:
-                anon_result = anonymizer.anonymize(
-                    text=tx.merchant,
-                    analyzer_results=merchant_results,
-                    operators=operators
-                )
-                new_merchant = anon_result.text
-                
-                for result in merchant_results:
-                    findings[result.entity_type] = findings.get(result.entity_type, 0) + 1
+            for res in merchant_results:
+                text_slice = tx.merchant[res.start:res.end]
+                add_finding(text_slice, res.entity_type, res.score, i, "merchant", res.start, res.end)
         except Exception as e:
-            logger.warning(f"Error analyzing merchant: {e}")
-        
-        cleaned_transactions.append(Transaction(
-            date=tx.date,
-            merchant=new_merchant,
-            description=new_desc,
-            category=tx.category,
-            amount=tx.amount,
-            type=tx.type
-        ))
+            logger.warning(f"Error analyzing merchant at row {i}: {e}")
+
+    candidates_list = list(candidate_map.values())
+    # Sort by confidence (desc) then count (desc)
+    candidates_list.sort(key=lambda x: (x.confidence, x.count), reverse=True)
     
-    total_found = sum(findings.values())
-    
-    return DeepCleanResponse(
-        transactions=cleaned_transactions,
-        findings=findings,
-        total_found=total_found
+    return ScanResponse(
+        candidates=candidates_list,
+        total_candidates=len(candidates_list)
     )
 
 
@@ -230,4 +221,3 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Deep Clean API shutting down - all data cleared from memory")
-
